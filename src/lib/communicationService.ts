@@ -1,4 +1,45 @@
-import { api } from './api';
+import { API_BASE_URL } from './mysql';
+
+// Generic API request function with authentication
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  // Check if we're on the client side before accessing localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('forward_africa_token') : null;
+
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, defaultOptions);
+
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('forward_africa_token');
+        localStorage.removeItem('forward_africa_user');
+        window.location.href = '/login';
+      }
+      throw new Error('Authentication required');
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+};
 
 export interface Announcement {
   id: number;
