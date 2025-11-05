@@ -433,11 +433,13 @@ class SearchService {
       }
     });
 
-    // Add tags
-    Object.values(mockCourseContent).forEach(content => {
-      content.tags?.forEach((tag: string) => {
-        if (tag.toLowerCase().includes(lowercaseQuery)) {
-          suggestions.add(tag);
+    // Add tags from courses
+    this.courses.forEach(course => {
+      // Search in course metadata for tags
+      const keywords = [course.category, course.title, ...course.lessons.map(l => l.title)];
+      keywords.forEach(keyword => {
+        if (keyword.toLowerCase().includes(lowercaseQuery)) {
+          suggestions.add(keyword);
         }
       });
     });
