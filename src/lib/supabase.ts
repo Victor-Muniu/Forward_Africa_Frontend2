@@ -33,7 +33,7 @@ const createMockClient = () => ({
   })
 });
 
-export const supabase = (supabaseUrl && supabaseAnonKey)
+export const supabase = (supabaseUrl && supabaseAnonKey && createClient)
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createMockClient() as any;
 
