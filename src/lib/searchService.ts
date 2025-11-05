@@ -156,8 +156,7 @@ class SearchService {
               category: course.category,
               thumbnail: course.thumbnail,
               lessons: course.lessons.length,
-              featured: course.featured,
-              ...courseContent
+              featured: course.featured
             }
           };
         }
