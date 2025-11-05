@@ -5,7 +5,7 @@ import { API_BASE_URL } from './mysql';
 import { Course, Category, Instructor, User, UserProgress, Certificate, Achievement } from '../types';
 
 // Generic API request function with authentication
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Check if we're on the client side before accessing localStorage
