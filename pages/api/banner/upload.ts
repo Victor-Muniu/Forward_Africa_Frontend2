@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('📁 Files:', Object.keys(files));
 
     // Check if file was uploaded
-    const uploadedFile = files.banner?.[0] as formidable.File;
+    const uploadedFile = files.banner?.[0] as any;
     if (!uploadedFile) {
       console.log('❌ No banner file found in request');
       console.log('📁 Available files:', files);
