@@ -268,8 +268,8 @@ class CommunicationService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.status) queryParams.append('status', params.status);
 
-    const response = await api.get(`${this.baseUrl}/push-notifications?${queryParams}`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/push-notifications?${queryParams}`);
+    return response;
   }
 
   async createPushNotification(data: {
@@ -279,20 +279,25 @@ class CommunicationService {
     custom_audience_ids?: number[];
     scheduled_at?: string;
   }): Promise<{ message: string; id: number }> {
-    const response = await api.post(`${this.baseUrl}/push-notifications`, data);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/push-notifications`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response;
   }
 
   async sendPushNotification(id: number): Promise<{ message: string; recipients_count: number }> {
-    const response = await api.post(`${this.baseUrl}/push-notifications/${id}/send`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/push-notifications/${id}/send`, {
+      method: 'POST',
+    });
+    return response;
   }
 
   // ==================== EMAIL TEMPLATES ====================
 
   async getEmailTemplates(): Promise<EmailTemplatesResponse> {
-    const response = await api.get(`${this.baseUrl}/email-templates`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/email-templates`);
+    return response;
   }
 
   async createEmailTemplate(data: {
@@ -302,27 +307,33 @@ class CommunicationService {
     variables?: string[];
     is_default?: boolean;
   }): Promise<{ message: string; id: number }> {
-    const response = await api.post(`${this.baseUrl}/email-templates`, data);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/email-templates`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response;
   }
 
   // ==================== SETTINGS ====================
 
   async getSettings(): Promise<SettingsResponse> {
-    const response = await api.get(`${this.baseUrl}/settings`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/settings`);
+    return response;
   }
 
   async updateSettings(settings: Partial<CommunicationSettings>): Promise<{ message: string }> {
-    const response = await api.put(`${this.baseUrl}/settings`, settings);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return response;
   }
 
   // ==================== ANALYTICS ====================
 
   async getAnalytics(): Promise<AnalyticsResponse> {
-    const response = await api.get(`${this.baseUrl}/analytics`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/analytics`);
+    return response;
   }
 }
 
