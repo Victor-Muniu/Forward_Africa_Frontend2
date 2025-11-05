@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { formidable } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import { promises as fsPromises } from 'fs';
@@ -20,8 +20,8 @@ interface UploadedFile {
 }
 
 interface ParsedForm {
-  fields: formidable.Fields;
-  files: formidable.Files;
+  fields: Record<string, string[]>;
+  files: Record<string, any[]>;
 }
 
 // Parse form data with formidable
