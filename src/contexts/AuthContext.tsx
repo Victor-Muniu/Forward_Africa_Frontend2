@@ -37,9 +37,25 @@ export const useAuth = () => {
   const firebaseAuth = useFirebaseAuth();
 
   // Convert Firebase auth response to the expected AuthUser format
+  const convertedUser = firebaseAuth.user ? {
+    id: firebaseAuth.user.uid,
+    email: firebaseAuth.user.email || '',
+    full_name: firebaseAuth.user.displayName || '',
+    role: firebaseAuth.user.role,
+    permissions: firebaseAuth.user.permissions,
+    avatar_url: firebaseAuth.user.photoURL || undefined,
+    onboarding_completed: firebaseAuth.user.onboarding_completed,
+    industry: firebaseAuth.user.industry,
+    experience_level: firebaseAuth.user.experience_level,
+    business_stage: firebaseAuth.user.business_stage,
+    country: firebaseAuth.user.country,
+    state_province: firebaseAuth.user.state_province,
+    city: firebaseAuth.user.city,
+  } as AuthUser : null;
+
   return {
-    user: firebaseAuth.user as unknown as AuthUser | null,
-    profile: firebaseAuth.profile as unknown as AuthUser | null,
+    user: convertedUser,
+    profile: convertedUser,
     loading: firebaseAuth.loading,
     isAuthenticated: firebaseAuth.isAuthenticated,
     isAdmin: firebaseAuth.isAdmin,
@@ -48,7 +64,24 @@ export const useAuth = () => {
     signIn: firebaseAuth.signIn as (credentials: LoginCredentials) => Promise<void>,
     signUp: firebaseAuth.signUp as (data: RegisterData) => Promise<void>,
     signOut: firebaseAuth.signOut,
-    updateProfile: firebaseAuth.updateProfile as (profileData: Partial<AuthUser>) => Promise<AuthUser>,
+    updateProfile: async (profileData: Partial<AuthUser>) => {
+      const updated = await firebaseAuth.updateProfile(profileData as any);
+      return {
+        id: updated.uid,
+        email: updated.email || '',
+        full_name: updated.displayName || '',
+        role: updated.role,
+        permissions: updated.permissions,
+        avatar_url: updated.photoURL || undefined,
+        onboarding_completed: updated.onboarding_completed,
+        industry: updated.industry,
+        experience_level: updated.experience_level,
+        business_stage: updated.business_stage,
+        country: updated.country,
+        state_province: updated.state_province,
+        city: updated.city,
+      } as AuthUser;
+    },
     refreshToken: async () => {
       // Firebase handles token refresh automatically
     },
