@@ -179,8 +179,8 @@ class CommunicationService {
     if (params?.status) queryParams.append('status', params.status);
     if (params?.audience) queryParams.append('audience', params.audience);
 
-    const response = await api.get(`${this.baseUrl}/announcements?${queryParams}`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/announcements?${queryParams}`);
+    return response;
   }
 
   async createAnnouncement(data: {
@@ -190,8 +190,11 @@ class CommunicationService {
     status?: string;
     expires_at?: string;
   }): Promise<{ message: string; id: number }> {
-    const response = await api.post(`${this.baseUrl}/announcements`, data);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/announcements`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response;
   }
 
   async updateAnnouncement(id: number, data: {
@@ -201,13 +204,18 @@ class CommunicationService {
     status?: string;
     expires_at?: string;
   }): Promise<{ message: string }> {
-    const response = await api.put(`${this.baseUrl}/announcements/${id}`, data);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/announcements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response;
   }
 
   async deleteAnnouncement(id: number): Promise<{ message: string }> {
-    const response = await api.delete(`${this.baseUrl}/announcements/${id}`);
-    return response.data;
+    const response = await apiRequest(`${this.baseUrl}/announcements/${id}`, {
+      method: 'DELETE',
+    });
+    return response;
   }
 
   // ==================== EMAIL CAMPAIGNS ====================
