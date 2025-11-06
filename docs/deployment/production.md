@@ -56,102 +56,18 @@ VITE_ALLOWED_ORIGINS=https://forwardafrica.com,https://www.forwardafrica.com
 VITE_API_RATE_LIMIT=1000
 ```
 
-## Supabase Backend Setup
+## Backend (Firestore) Setup
 
-### 1. Create Supabase Project
+This project has migrated from Supabase to Firebase. Please follow FIREBASE_MIGRATION_GUIDE.md for full production setup instructions (Firestore, Firebase Auth, Firebase Storage, and Cloud Functions).
 
-```bash
-# Using Supabase CLI
-supabase projects create forward-africa-prod
+Key reminders:
 
-# Or create through dashboard at https://app.supabase.com
-```
+- Set up a Firebase project and enable Firestore, Authentication, and Storage.
+- Configure OAuth providers (e.g., Google) in the Firebase Console.
+- Deploy Cloud Functions for server-side tasks (certificate generation, emails, AI assistant).
+- Use the Firestore security rules and Storage rules to enforce access control.
 
-### 2. Database Setup
-
-Run the following SQL scripts in your Supabase SQL editor:
-
-```sql
--- Enable necessary extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- Create user profiles table
-CREATE TABLE user_profiles (
-  id UUID REFERENCES auth.users(id) PRIMARY KEY,
-  email TEXT NOT NULL,
-  full_name TEXT,
-  avatar_url TEXT,
-  education_level TEXT,
-  job_title TEXT,
-  topics_of_interest TEXT[],
-  onboarding_completed BOOLEAN DEFAULT FALSE,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'content_manager', 'admin', 'super_admin')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policies
-CREATE POLICY "Users can read own profile" ON user_profiles
-  FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" ON user_profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Create other tables (courses, facilitators, etc.)
--- See database.md for complete schema
-```
-
-### 3. Authentication Setup
-
-Configure authentication providers in Supabase dashboard:
-
-1. **Google OAuth**:
-   - Enable Google provider
-   - Add OAuth credentials
-   - Set redirect URLs
-
-2. **Email Settings**:
-   - Configure SMTP settings
-   - Customize email templates
-   - Set up email confirmations
-
-### 4. Storage Setup
-
-Create storage buckets:
-
-```sql
--- Create storage buckets
-INSERT INTO storage.buckets (id, name, public) VALUES
-('avatars', 'avatars', true),
-('course-media', 'course-media', true),
-('certificates', 'certificates', false);
-
--- Set up storage policies
-CREATE POLICY "Avatar images are publicly accessible" ON storage.objects
-  FOR SELECT USING (bucket_id = 'avatars');
-
-CREATE POLICY "Users can upload their own avatar" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'avatars' AND
-    auth.uid()::text = (storage.foldername(name))[1]
-  );
-```
-
-### 5. Edge Functions Deployment
-
-Deploy edge functions for AI assistant and certificate generation:
-
-```bash
-# Deploy AI assistant function
-supabase functions deploy ai-assistant
-
-# Deploy certificate generator function
-supabase functions deploy certificate-generator
-```
+For migration steps and data import, see FIREBASE_MIGRATION_GUIDE.md.
 
 ## Frontend Build and Optimization
 
