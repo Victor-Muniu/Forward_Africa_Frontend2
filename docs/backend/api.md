@@ -22,10 +22,10 @@ This document provides comprehensive documentation for the backend API endpoints
 
 ### Base URL
 ```
-Current Production: https://your-project.supabase.co
-Current Development: http://localhost:54321
-Planned Production: https://your-project.firebaseapp.com
-Planned Development: http://localhost:9099
+Current Production: https://your-production-domain.com
+    Current Development: http://localhost:9000 (Firebase emulator)
+    Planned Production: https://your-project.firebaseapp.com
+    Planned Development: http://localhost:9099
 ```
 
 ### Authentication
