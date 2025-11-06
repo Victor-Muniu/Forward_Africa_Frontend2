@@ -422,10 +422,10 @@ ON notifications(user_id, read, created_at);
 
 ### 2. Connection Pooling
 
-Configure in Supabase dashboard:
-- Pool size: 15-25 connections
-- Pool timeout: 30 seconds
-- Idle timeout: 10 minutes
+Configure performance settings via Firebase Console / Google Cloud Console:
+- Use Firestore indexes and Cloud Firestore performance monitoring
+- Configure automatic scaling via Firestore settings
+- Use Cloud Tasks or Cloud Functions for long-running jobs and batching
 
 ### 3. Query Optimization
 
