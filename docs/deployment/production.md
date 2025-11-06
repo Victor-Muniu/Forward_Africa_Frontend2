@@ -226,8 +226,7 @@ npm i -g vercel
 vercel --prod
 
 # Configure environment variables
-vercel env add VITE_SUPABASE_URL production
-vercel env add VITE_SUPABASE_ANON_KEY production
+# Use vercel env add to set production environment variables (Firebase keys or other secrets)
 ```
 
 Create `vercel.json`:
