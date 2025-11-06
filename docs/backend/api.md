@@ -98,7 +98,7 @@ const signInWithGoogle = async () => {
 
 ## User Management API
 
-### Current Implementation (Supabase)
+### Current Implementation (Legacy - Supabase)
 
 #### Get User Profile
 **Endpoint**: `GET /rest/v1/user_profiles?id=eq.{user_id}`
@@ -153,7 +153,7 @@ const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) 
 
 ## Course Management API
 
-### Current Implementation (Supabase)
+### Current Implementation (Legacy - Supabase)
 
 #### Get All Courses
 **Endpoint**: `GET /rest/v1/courses`
@@ -457,7 +457,7 @@ export const createAdminUser = onCall(async (request) => {
 
 ## Real-time API
 
-### Current Implementation (Supabase)
+### Current Implementation (Legacy - Supabase)
 
 ```typescript
 // Supabase real-time subscription
