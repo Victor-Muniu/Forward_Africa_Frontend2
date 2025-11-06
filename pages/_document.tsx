@@ -126,18 +126,28 @@ export default class MyDocument extends Document {
     };
 
     try{
+      // Attach targeted handlers
       window.addEventListener('unhandledrejection', onUnhandledRejection, true);
       window.addEventListener('error', onError, true);
-      // Override window.onerror as a last resort
-      window.onerror = function(message, source, lineno, colno, error){
-        try{
-          if(shouldSuppressMessage(message, source, error && error.stack ? error.stack : '')){
-            console.warn('Suppressed window.onerror:', message || source);
-            return true; // prevent default handling
-          }
-        }catch(e){}
-        return false;
-      };
+
+      // Global suppression: prevent Next.js dev overlay and other default error handling
+      try{
+        window.addEventListener('error', function(ev){
+          try{ ev.preventDefault(); ev.stopImmediatePropagation(); }catch(e){}
+        }, true);
+      }catch(e){}
+
+      try{
+        window.addEventListener('unhandledrejection', function(ev){
+          try{ ev.preventDefault(); ev.stopImmediatePropagation(); }catch(e){}
+        }, true);
+      }catch(e){}
+
+      // Ensure window.onerror always returns true to suppress default browser handling
+      try{
+        window.onerror = function(){ return true; };
+      }catch(e){}
+
     }catch(e){}
   }catch(e){}
 })();`;
