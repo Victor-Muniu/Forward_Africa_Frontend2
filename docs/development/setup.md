@@ -93,10 +93,7 @@ cp .env.example .env.local
 Update `.env.local` with your configuration:
 
 ```env
-# Supabase Configuration (Optional for development)
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-
+# Firebase configuration is used. See FIREBASE_MIGRATION_GUIDE.md for required variables and emulator setup.
 # Development Configuration
 VITE_APP_NAME=Forward Africa (Dev)
 VITE_APP_URL=http://localhost:5173
