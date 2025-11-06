@@ -33,7 +33,7 @@ Forward Africa is a comprehensive learning management system designed specifical
 ### Technology Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS
-- **Backend**: Currently Supabase (PostgreSQL, Authentication, Real-time) - **Migrating to Firebase**
+- **Backend**: Firebase (Firestore, Authentication, Real-time) — migrated from Supabase
 - **Build Tool**: Vite
 - **State Management**: React Context API
 - **Routing**: React Router v6
@@ -64,11 +64,11 @@ src/
 
 ### Data Flow
 
-1. **Authentication**: Currently Supabase Auth (migrating to Firebase Auth)
+1. **Authentication**: Firebase Auth
 2. **State Management**: React Context for global state
-3. **Data Storage**: LocalStorage for development, Supabase for production (migrating to Firestore)
-4. **Real-time Updates**: Supabase real-time subscriptions (migrating to Firestore real-time listeners)
-5. **File Storage**: Supabase Storage (migrating to Firebase Storage)
+3. **Data Storage**: LocalStorage for development, Firestore for production
+4. **Real-time Updates**: Firestore real-time listeners
+5. **File Storage**: Firebase Storage
 
 ## Frontend Documentation
 
@@ -190,7 +190,7 @@ const { certificates, generateCertificate, getCertificate } = useCertificates();
 
 ## Backend Documentation
 
-### Current Backend (Supabase)
+### Backend (Firebase)
 
 #### Database Schema
 
@@ -247,8 +247,8 @@ All tables implement comprehensive RLS policies:
 - **Memory**: Real-time state management
 
 #### Production Mode (Current)
-- **Supabase Database**: All persistent data
-- **Supabase Storage**: Media files and assets
+- **Firestore Database**: All persistent data
+- **Firebase Storage**: Media files and assets
 - **CDN**: Static assets and optimized images
 
 ## Authentication & Authorization
