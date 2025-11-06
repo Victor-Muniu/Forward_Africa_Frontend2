@@ -23,7 +23,7 @@ This document provides comprehensive documentation for the database schema, rela
 
 ```
 Database: forward_africa_platform
-├── auth.users (Supabase managed)
+├── auth.users (Legacy - Supabase managed)
 ├── public.user_profiles
 ├── public.courses
 ├── public.facilitators
