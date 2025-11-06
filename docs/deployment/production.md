@@ -15,7 +15,7 @@ This guide provides comprehensive instructions for deploying the Forward Africa 
 ### Required Tools
 - Node.js 18+ and npm
 - Git
-- Supabase CLI (optional)
+- Firebase CLI (optional)
 - Netlify CLI (optional)
 
 ## Environment Setup
