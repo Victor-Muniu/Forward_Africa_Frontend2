@@ -340,7 +340,7 @@ The application will be migrated from Supabase to Firebase for better scalabilit
 ### Firebase Services Integration
 
 #### 1. Firebase Authentication
-- **Current**: Supabase Auth
+- **Current (legacy)**: Supabase Auth
 - **Migration**: Firebase Auth with email/password and Google OAuth
 - **Benefits**: Better Google integration, more auth providers
 
