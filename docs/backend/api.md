@@ -460,18 +460,7 @@ export const createAdminUser = onCall(async (request) => {
 ### Current Implementation (Legacy - Supabase)
 
 ```typescript
-// Supabase real-time subscription
-const subscription = supabase
-  .channel('user_progress')
-  .on('postgres_changes', {
-    event: 'UPDATE',
-    schema: 'public',
-    table: 'user_progress',
-    filter: `user_id=eq.${userId}`
-  }, (payload) => {
-    console.log('Progress updated:', payload.new);
-  })
-  .subscribe();
+// Legacy Supabase real-time subscription removed. Use Firestore real-time listeners as shown in the "Planned Implementation (Firebase)" section above.
 ```
 
 ### Planned Implementation (Firebase)
