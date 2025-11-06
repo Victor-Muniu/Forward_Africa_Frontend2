@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for deploying the Forward Africa 
 ## Prerequisites
 
 ### Required Accounts
-- **Supabase Account**: For backend services
+- **Firebase Project**: For backend services (Firestore, Auth, Storage)
 - **Netlify Account**: For frontend hosting (recommended)
 - **Domain Provider**: For custom domain setup
 - **CDN Provider**: For asset optimization (optional)
