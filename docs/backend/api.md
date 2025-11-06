@@ -36,7 +36,7 @@ Authorization: Bearer <jwt_token>
 
 ## Authentication API
 
-### Current Authentication (Supabase)
+### Current Authentication (Legacy - Supabase)
 
 #### Sign Up
 **Endpoint**: `POST /auth/v1/signup`
