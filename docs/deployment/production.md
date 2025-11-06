@@ -444,10 +444,10 @@ LIMIT 10;
 
 ### 1. Database Backups
 
-Supabase provides automated backups:
-- Daily backups retained for 7 days
-- Weekly backups retained for 4 weeks
-- Monthly backups retained for 3 months
+Use Firebase export/import and Google Cloud storage for backups:
+- Schedule automated exports of Firestore to Cloud Storage
+- Retain backups according to your retention policy (daily/weekly/monthly)
+- Use managed exports for point-in-time recovery where applicable
 
 ### 2. Application Backups
 
