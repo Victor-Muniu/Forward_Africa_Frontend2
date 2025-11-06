@@ -463,8 +463,8 @@ cp .env.production .env.production.backup
 ### 3. Recovery Procedures
 
 1. **Database Recovery**:
-   - Use Supabase dashboard for point-in-time recovery
-   - Restore from specific backup if needed
+   - Use Firebase/Google Cloud managed export and backup procedures for recovery
+   - Restore from exported backups stored in Cloud Storage if needed
 
 2. **Application Recovery**:
    - Rollback to previous Git tag
