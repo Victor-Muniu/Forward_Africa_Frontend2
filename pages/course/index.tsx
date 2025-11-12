@@ -7,6 +7,13 @@ export default function CourseIndex() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
+
   useEffect(() => {
     const fetchAndRedirect = async () => {
       try {
