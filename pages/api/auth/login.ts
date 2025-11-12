@@ -1,14 +1,68 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import admin from 'firebase-admin';
 
-// Enhanced error handling
-class AuthError extends Error {
-  constructor(
-    public code: string,
-    message: string,
-    public statusCode: number = 500
-  ) {
-    super(message);
-    this.name = 'AuthError';
+// Initialize Firebase Admin
+const initFirebaseAdmin = () => {
+  if (!admin.apps.length) {
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountKey) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not configured');
+    }
+
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountKey);
+    } catch (err) {
+      serviceAccount = serviceAccountKey;
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  }
+};
+
+// JWT utilities
+class JWTManager {
+  private static JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+  private static JWT_EXPIRES_IN = Number(process.env.JWT_EXPIRES_IN) || 3600; // 1 hour
+
+  static base64UrlEncode(str: string): string {
+    return Buffer.from(str)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  }
+
+  static generateSignature(message: string): string {
+    const crypto = require('crypto');
+    return crypto
+      .createHmac('sha256', this.JWT_SECRET)
+      .update(message)
+      .digest('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  }
+
+  static createToken(payload: any): string {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + this.JWT_EXPIRES_IN;
+
+    const tokenPayload = { ...payload, iat, exp };
+
+    const headerEncoded = this.base64UrlEncode(JSON.stringify(header));
+    const payloadEncoded = this.base64UrlEncode(JSON.stringify(tokenPayload));
+    const message = `${headerEncoded}.${payloadEncoded}`;
+    const signature = this.generateSignature(message);
+
+    return `${message}.${signature}`;
+  }
+
+  static getTokenExpiry(): number {
+    return this.JWT_EXPIRES_IN * 1000; // in milliseconds
   }
 }
 
@@ -25,20 +79,20 @@ const validation = {
 
   validateCredentials: (email: string, password: string): void => {
     if (!email || !password) {
-      throw new AuthError('MISSING_CREDENTIALS', 'Email and password are required', 400);
+      throw new Error('MISSING_CREDENTIALS');
     }
 
     if (!validation.validateEmail(email)) {
-      throw new AuthError('INVALID_EMAIL', 'Please enter a valid email address', 400);
+      throw new Error('INVALID_EMAIL');
     }
 
     if (!validation.validatePassword(password)) {
-      throw new AuthError('WEAK_PASSWORD', 'Password must be at least 6 characters long', 400);
+      throw new Error('WEAK_PASSWORD');
     }
   }
 };
 
-// Rate limiting (simple in-memory implementation)
+// Rate limiting
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -48,20 +102,12 @@ const rateLimit = {
     const now = Date.now();
     const attempts = loginAttempts.get(email);
 
-    if (attempts) {
-      // Check if lockout period has passed
-      if (now - attempts.lastAttempt < LOCKOUT_DURATION) {
-        if (attempts.count >= MAX_ATTEMPTS) {
-          throw new AuthError(
-            'RATE_LIMITED',
-            'Too many login attempts. Please try again later.',
-            429
-          );
-        }
-      } else {
-        // Reset attempts after lockout period
-        loginAttempts.delete(email);
+    if (attempts && now - attempts.lastAttempt < LOCKOUT_DURATION) {
+      if (attempts.count >= MAX_ATTEMPTS) {
+        throw new Error('RATE_LIMITED');
       }
+    } else if (attempts) {
+      loginAttempts.delete(email);
     }
   },
 
@@ -69,10 +115,8 @@ const rateLimit = {
     const now = Date.now();
 
     if (success) {
-      // Clear attempts on successful login
       loginAttempts.delete(email);
     } else {
-      // Record failed attempt
       const attempts = loginAttempts.get(email) || { count: 0, lastAttempt: 0 };
       attempts.count += 1;
       attempts.lastAttempt = now;
@@ -81,17 +125,14 @@ const rateLimit = {
   }
 };
 
-// Enhanced login handler
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: 'Method not allowed',
-      code: 'METHOD_NOT_ALLOWED'
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    initFirebaseAdmin();
+
     const { email, password } = req.body;
 
     // Validate input
@@ -100,81 +141,104 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Check rate limiting
     rateLimit.checkRateLimit(email);
 
-    console.log('🔐 API Login: Attempting login for:', email);
+    console.log('🔐 Login attempt for:', email);
 
-    // Forward request to backend
-    const backendResponse = await fetch('http://localhost:3002/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const responseData = await backendResponse.json();
-
-    if (!backendResponse.ok) {
-      // Record failed attempt
+    // Get user from Firebase Auth
+    let userRecord;
+    try {
+      userRecord = await admin.auth().getUserByEmail(email);
+    } catch (error: any) {
       rateLimit.recordAttempt(email, false);
-
-      // Handle specific backend errors
-      switch (backendResponse.status) {
-        case 400:
-          throw new AuthError('INVALID_CREDENTIALS', responseData.error || 'Invalid credentials', 400);
-        case 401:
-          throw new AuthError('UNAUTHORIZED', responseData.error || 'Invalid email or password', 401);
-        case 403:
-          throw new AuthError('ACCOUNT_SUSPENDED', responseData.error || 'Account is suspended', 403);
-        case 429:
-          throw new AuthError('RATE_LIMITED', responseData.error || 'Too many login attempts', 429);
-        case 500:
-          throw new AuthError('SERVER_ERROR', 'Internal server error. Please try again later.', 500);
-        default:
-          throw new AuthError('LOGIN_FAILED', responseData.error || 'Login failed', backendResponse.status);
+      if (error.code === 'auth/user-not-found') {
+        return res.status(401).json({ error: 'Invalid email or password' });
       }
+      throw error;
     }
 
-    // Validate response data
-    if (!responseData.token || !responseData.refreshToken || !responseData.user) {
-      throw new AuthError('INVALID_RESPONSE', 'Invalid response from authentication server', 500);
+    // Get user's role and permissions from Firestore
+    let userRole = 'user';
+    let userPermissions: string[] = [];
+    let userData: any = {};
+
+    try {
+      const db = admin.firestore();
+      const userDoc = await db.collection('users').doc(userRecord.uid).get();
+
+      if (userDoc.exists) {
+        const data = userDoc.data();
+        userRole = data?.role || 'user';
+        userPermissions = data?.permissions || [];
+        userData = data || {};
+      }
+    } catch (error) {
+      console.warn('Could not fetch user role from Firestore:', error);
     }
 
-    // Record successful attempt
+    // Create JWT token with user information and role
+    const tokenPayload = {
+      userId: userRecord.uid,
+      email: userRecord.email,
+      displayName: userRecord.displayName || '',
+      photoURL: userRecord.photoURL || null,
+      role: userRole,
+      permissions: userPermissions
+    };
+
+    const jwtToken = JWTManager.createToken(tokenPayload);
+    const tokenExpiryMs = JWTManager.getTokenExpiry();
+
+    // Prepare user data for response
+    const responseUser = {
+      id: userRecord.uid,
+      email: userRecord.email,
+      full_name: userRecord.displayName || '',
+      displayName: userRecord.displayName || '',
+      photoURL: userRecord.photoURL || null,
+      role: userRole,
+      permissions: userPermissions,
+      ...userData
+    };
+
+    // Set JWT token in HTTP-only cookie
+    const cookieOptions = [
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Strict',
+      `Max-Age=${tokenExpiryMs / 1000}`, // Convert ms to seconds
+      process.env.NODE_ENV === 'production' ? 'Secure' : ''
+    ].filter(Boolean).join('; ');
+
+    res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
+
     rateLimit.recordAttempt(email, true);
 
-    console.log('✅ API Login: Login successful for:', email);
+    console.log('✅ Login successful for:', email);
 
-    // Return success response
     return res.status(200).json({
       message: 'Login successful',
-      token: responseData.token,
-      refreshToken: responseData.refreshToken,
-      user: responseData.user
+      user: responseUser,
+      token: jwtToken // Also return token for client-side storage if needed
     });
 
-  } catch (error) {
-    console.error('❌ API Login Error:', error);
+  } catch (error: any) {
+    console.error('❌ Login error:', error);
 
-    if (error instanceof AuthError) {
-      return res.status(error.statusCode).json({
-        error: error.message,
-        code: error.code
-      });
+    const errorMessages: { [key: string]: { status: number; message: string } } = {
+      'MISSING_CREDENTIALS': { status: 400, message: 'Email and password are required' },
+      'INVALID_EMAIL': { status: 400, message: 'Please enter a valid email address' },
+      'WEAK_PASSWORD': { status: 400, message: 'Password must be at least 6 characters' },
+      'RATE_LIMITED': { status: 429, message: 'Too many login attempts. Please try again later.' }
+    };
+
+    const errorInfo = errorMessages[error.message];
+    if (errorInfo) {
+      return res.status(errorInfo.status).json({ error: errorInfo.message });
     }
 
-    // Handle unexpected errors
-    return res.status(500).json({
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    });
+    return res.status(500).json({ error: 'Login failed. Please try again.' });
   }
 }
 
-// Configure API route
 export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
+  api: { bodyParser: { sizeLimit: '1mb' } }
 };
