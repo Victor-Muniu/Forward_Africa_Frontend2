@@ -547,7 +547,8 @@ export const useUsers = () => {
     setError(null);
           try {
         const data = await userAPI.getUsers();
-        setUsers(data);
+        const dataArray = Array.isArray(data) ? data : [];
+        setUsers(dataArray);
       } catch (err) {
       setError('Failed to fetch users');
       console.error('Error fetching users:', err);
