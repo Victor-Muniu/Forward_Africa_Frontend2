@@ -76,7 +76,7 @@ const CoursePage: React.FC = () => {
   }, [courseId, getCertificate, isClient]);
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated) {
+    if (authLoading || !isAuthenticated || !hasCheckedToken) {
       return;
     }
 
