@@ -20,16 +20,17 @@ export const useCourses = () => {
     try {
       console.log('📡 useDatabase: Making API call to getAllCourses...');
       const data = await courseAPI.getAllCourses(includeComingSoon);
+      const dataArray = Array.isArray(data) ? data : [];
       console.log('✅ useDatabase: API call successful, received data:', {
-        dataLength: data.length,
+        dataLength: dataArray.length,
         dataType: typeof data,
         isArray: Array.isArray(data),
-        firstItem: data[0] ? { id: data[0].id, title: data[0].title, coming_soon: data[0].coming_soon } : null
+        firstItem: dataArray[0] ? { id: dataArray[0].id, title: dataArray[0].title, coming_soon: dataArray[0].coming_soon } : null
       });
 
       // Transform backend data to frontend format with dual fallback logic
       console.log('🔄 useDatabase: Starting data transformation...');
-      const transformedCourses = data.map((course: any) => {
+      const transformedCourses = dataArray.map((course: any) => {
         console.log('🎯 useDatabase: Transforming course:', {
           id: course.id,
           title: course.title,
@@ -161,9 +162,10 @@ export const useCourses = () => {
   const fetchFeaturedCourses = useCallback(async () => {
     try {
       const data = await courseAPI.getFeaturedCourses();
+      const dataArray = Array.isArray(data) ? data : [];
 
       // Transform backend data to frontend format with dual fallback logic
-      const transformedCourses = data.map((course: any) => {
+      const transformedCourses = dataArray.map((course: any) => {
         // DUAL FALLBACK instructor handling - same logic as admin page
         let instructorName = 'Unknown Instructor';
         let instructorTitle = 'Instructor';
@@ -410,7 +412,8 @@ export const useUserProgress = (userId: string) => {
     setError(null);
     try {
       const data = await progressAPI.getAllUserProgress(userId);
-      setProgress(data);
+      const dataArray = Array.isArray(data) ? data : [];
+      setProgress(dataArray);
     } catch (err) {
       setError('Failed to fetch user progress');
       console.error('Error fetching user progress:', err);
