@@ -406,7 +406,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       console.log('🚪 AuthContext: Signing out...');
-      authService.logout();
+      if (typeof window !== 'undefined') {
+        await firebaseAuthService.signOut();
+      } else {
+        await authService.logout();
+      }
       setUser(null);
       setError(null);
       console.log('✅ AuthContext: Sign out successful');
