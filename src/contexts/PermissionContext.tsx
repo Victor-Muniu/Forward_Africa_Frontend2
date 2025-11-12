@@ -23,7 +23,7 @@ export const usePermissions = () => {
 };
 
 export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useFirebaseAuth();
+  const { user } = useAuth();
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [permissions, setPermissions] = useState<Permission[]>(ROLE_PERMISSIONS.user);
 
