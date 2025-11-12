@@ -211,13 +211,14 @@ export const firebaseAuthService = {
     } catch (error: any) {
       console.error('❌ Firebase Auth: Sign in failed:', error);
 
-      // Network error guidance
-      if (error?.code === 'auth/network-request-failed' || (error?.message && error.message.toLowerCase().includes('network'))) {
-        throw new FirebaseAuthError('NETWORK_ERROR', 'Network error: could not reach Firebase Auth. Check NEXT_PUBLIC_FIREBASE_API_KEY, authorized domains in Firebase console, and that Email/Password provider is enabled.');
+      // Network error guidance (handle different browser messages)
+      const msg = (error && error.message) ? String(error.message).toLowerCase() : '';
+      if (error?.code === 'auth/network-request-failed' || msg.includes('network') || msg.includes('failed to fetch')) {
+        throw new FirebaseAuthError('NETWORK_ERROR', 'Network error: could not reach Firebase Auth. Check your internet connection, NEXT_PUBLIC_FIREBASE_API_KEY, authorized domains in Firebase console, and that the Email/Password provider is enabled.');
       }
 
       // Handle specific Firebase error codes
-      switch (error.code) {
+      switch (error?.code) {
         case 'auth/user-not-found':
           throw new FirebaseAuthError('USER_NOT_FOUND', 'No user found with this email address');
         case 'auth/wrong-password':
@@ -229,6 +230,11 @@ export const firebaseAuthService = {
         case 'auth/too-many-requests':
           throw new FirebaseAuthError('TOO_MANY_REQUESTS', 'Too many failed attempts. Please try again later');
         default:
+          // If it's an unhandled TypeError (like CORS or network), wrap it
+          if (error instanceof TypeError) {
+            throw new FirebaseAuthError('NETWORK_ERROR', 'Network error during sign in: ' + (error.message || 'Failed to fetch'));
+          }
+
           throw new FirebaseAuthError('SIGN_IN_FAILED', error.message || 'Sign in failed');
       }
     }
