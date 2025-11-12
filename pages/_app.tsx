@@ -2,7 +2,6 @@ import type { AppProps } from 'next/app'
 import { useEffect, useState } from 'react'
 import { AuthProvider } from '../src/contexts/AuthContext'
 import { PermissionProvider } from '../src/contexts/PermissionContext'
-import { TokenStatusIndicator } from '../src/components/ui/TokenStatusIndicator'
 import GlobalErrorBoundary from '../src/components/ui/GlobalErrorBoundary'
 import '../src/index.css'
 // Import console storage utilities for global access
