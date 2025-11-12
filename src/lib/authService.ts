@@ -387,7 +387,7 @@ export const authService = {
 
   // Get token status
   getTokenStatus(): { isValid: boolean; isExpired: boolean; timeUntilExpiry: number | null } {
-    const token = this.getTokenFromCookie();
+    const token = this.getToken();
 
     if (!token) {
       return { isValid: false, isExpired: true, timeUntilExpiry: 0 };
