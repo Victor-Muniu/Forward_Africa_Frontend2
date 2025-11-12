@@ -368,7 +368,7 @@ export const authService = {
 
   // Get token expiry time in milliseconds
   getTokenExpiryMs(): number | null {
-    const token = this.getTokenFromCookie();
+    const token = this.getToken();
     if (!token) return null;
     return jwtUtils.getTokenExpiry(token);
   },
