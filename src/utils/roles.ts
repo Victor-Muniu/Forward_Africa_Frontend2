@@ -2,6 +2,7 @@ import { UserRole } from '../types';
 
 export const ALLOWED_ROLES: UserRole[] = [
   'super_admin',
+  'admin',
   'content_manager',
   'community_manager',
   'user_support',
@@ -23,7 +24,7 @@ export function normalizeRole(input: any): UserRole {
     case 'admin':
     case 'administrator':
     case 'owner':
-      return 'super_admin';
+      return 'admin';
 
     case 'content_manager':
     case 'contentmanager':

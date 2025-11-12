@@ -18,7 +18,7 @@ export interface User {
 }
 
 // Role Definitions
-export type UserRole = 'super_admin' | 'content_manager' | 'community_manager' | 'user_support' | 'user';
+export type UserRole = 'super_admin' | 'admin' | 'content_manager' | 'community_manager' | 'user_support' | 'user';
 
 // Workflow Types
 export type WorkflowStatus = 'draft' | 'review' | 'approved' | 'published' | 'archived';
@@ -192,6 +192,46 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'security:terminate_sessions'
   ],
 
+  admin: [
+    // Admin role: full access to admin panel and management, not full system-level operations
+    'users:view',
+    'users:create',
+    'users:edit',
+    'users:delete',
+    'users:assign_roles',
+    'users:suspend',
+    'users:activate',
+    // Content & course management
+    'content:upload',
+    'content:edit',
+    'content:delete',
+    'content:publish',
+    'content:review',
+    'courses:view',
+    'courses:create',
+    'courses:edit',
+    'courses:delete',
+    'courses:publish',
+    'courses:assign_instructors',
+    'instructors:view',
+    'instructors:create',
+    'instructors:edit',
+    'instructors:approve',
+    // Community & support
+    'community:moderate',
+    'community:ban_users',
+    'community:delete_posts',
+    'communication:send_announcements',
+    'communication:send_notifications',
+    'support:view_tickets',
+    'support:respond_tickets',
+    // Analytics & financial viewing
+    'analytics:view',
+    'financial:view',
+    // Audit access (view only)
+    'audit:view_logs'
+  ],
+
   content_manager: [
     // Content management
     'content:upload',
@@ -320,10 +360,11 @@ export const hasAllPermissions = (userPermissions: Permission[], requiredPermiss
 // Role Hierarchy
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   super_admin: 5,
-  content_manager: 4,
-  community_manager: 3,
-  user_support: 2,
-  user: 1
+  admin: 4,
+  content_manager: 3,
+  community_manager: 2,
+  user_support: 1,
+  user: 0
 };
 
 export const canManageRole = (currentUserRole: UserRole, targetRole: UserRole): boolean => {
