@@ -45,21 +45,75 @@ const DEFAULT_ADMIN: AuthUser = {
   city: undefined
 } as any;
 
+import { auth as firebaseAuth } from '../lib/firebase';
+import { API_BASE_URL } from '../lib/mysql';
+import { authService } from '../lib/auth';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(DEFAULT_ADMIN);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // No-op: we intentionally keep a default admin user to remove login flows
+    // No-op by default
   }, []);
 
-  const signIn = async (_credentials?: any) => {
-    // No real sign-in: ensure user is set to admin
+  const signIn = async (credentials?: any) => {
     setLoading(true);
     setError(null);
-    setUser(DEFAULT_ADMIN);
-    setLoading(false);
+
+    try {
+      // If caller provided full token payload (token, refreshToken, user), persist it
+      if (credentials && credentials.token && credentials.refreshToken && credentials.user) {
+        authService.setAuthData(credentials.token, credentials.refreshToken, credentials.user);
+        setUser(credentials.user as AuthUser);
+        setLoading(false);
+        return;
+      }
+
+      // If email/password provided, use authService.login (mocked or real) which stores tokens
+      if (credentials && credentials.email && credentials.password) {
+        const resp = await authService.login({ email: credentials.email, password: credentials.password });
+        // authService.login calls setAuthData internally for mock, but ensure user state is updated
+        setUser(resp.user as AuthUser);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: if Firebase user exists, exchange ID token with backend
+      if (typeof window !== 'undefined' && firebaseAuth?.currentUser) {
+        const fbUser = firebaseAuth.currentUser;
+        const idToken = await fbUser.getIdToken();
+
+        const resp = await fetch(`${API_BASE_URL}/auth/firebase/exchange`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          const appUser = data.user || DEFAULT_ADMIN;
+          if (data.token && data.refreshToken) {
+            authService.setAuthData(data.token, data.refreshToken, appUser);
+            setUser(appUser as AuthUser);
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.warn('Token exchange failed with status', resp.status);
+        }
+      }
+
+      // If nothing else, fall back to default admin user
+      setUser(DEFAULT_ADMIN);
+    } catch (err) {
+      console.error('SignIn failed in AuthProvider:', err);
+      setError(String(err));
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signUp = async (_data?: any) => {
