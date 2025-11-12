@@ -214,6 +214,11 @@ export const authService = {
       const data: AuthResponse = await response.json();
       console.log('✅ AuthService: Login successful');
 
+      // Store token in localStorage for persistence across hard refresh
+      if (data.token) {
+        this.setTokenInStorage(data.token);
+      }
+
       return data;
     } catch (error) {
       console.error('❌ AuthService: Login error:', error);
