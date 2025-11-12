@@ -163,7 +163,7 @@ export const useCourses = () => {
   const fetchFeaturedCourses = useCallback(async () => {
     try {
       const data = await courseAPI.getFeaturedCourses();
-      const dataArray = Array.isArray(data) ? data : [];
+      const dataArray: any[] = Array.isArray(data) ? (data as any[]) : ([] as any[]);
 
       // Transform backend data to frontend format with dual fallback logic
       const transformedCourses = dataArray.map((course: any) => {
