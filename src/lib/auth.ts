@@ -628,7 +628,7 @@ export const authService = {
   // Check if user has admin privileges
   isAdmin: (): boolean => {
     const user = authService.getUser();
-    return user?.role === 'super_admin';
+    return user?.role === 'super_admin' || user?.role === 'admin';
   },
 
   // Check if user is authenticated
