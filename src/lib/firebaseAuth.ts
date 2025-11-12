@@ -13,6 +13,7 @@ import {
 import { auth } from './firebase';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { normalizeRole } from '../utils/roles';
 
 export interface FirebaseUser {
   uid: string;
@@ -84,7 +85,7 @@ const convertFirebaseUser = async (firebaseUser: User): Promise<FirebaseUser> =>
         displayName: firebaseUser.displayName,
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified,
-        role: userData.role || 'user',
+        role: normalizeRole(userData.role),
         permissions: userData.permissions || [],
         onboarding_completed: userData.onboarding_completed || false,
         industry: userData.industry,

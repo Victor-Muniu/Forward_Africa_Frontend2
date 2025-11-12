@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Permission, UserRole, ROLE_PERMISSIONS } from '../types';
 import { hasPermission as checkPermission, hasAnyPermission, hasAllPermissions } from '../types';
+import { normalizeRole } from '../utils/roles';
 import { useAuth } from './AuthContext';
 
 interface PermissionContextType {
@@ -29,7 +30,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   useEffect(() => {
     // Get user role from AuthContext user
-    const role = (user?.role as UserRole) || 'user';
+    const role = normalizeRole(user?.role as any);
     setUserRole(role);
     setPermissions(ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.user);
   }, [user]);

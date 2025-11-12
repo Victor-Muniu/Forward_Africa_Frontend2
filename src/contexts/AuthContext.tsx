@@ -4,6 +4,7 @@ import { authService, AuthUser, LoginCredentials, RegisterData } from '../lib/au
 import { auth } from '../lib/firebase';
 import { useFirebaseAuth } from './FirebaseAuthContext';
 import { firebaseAuthService, FirebaseUser as FBUser } from '../lib/firebaseAuth';
+import { normalizeRole } from '../utils/roles';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -43,7 +44,7 @@ export const useAuth = () => {
     id: firebaseAuth.user.uid,
     email: firebaseAuth.user.email || '',
     full_name: firebaseAuth.user.displayName || '',
-    role: firebaseAuth.user.role,
+    role: normalizeRole(firebaseAuth.user.role),
     permissions: firebaseAuth.user.permissions,
     avatar_url: firebaseAuth.user.photoURL || undefined,
     onboarding_completed: firebaseAuth.user.onboarding_completed,
@@ -124,7 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               id: (firebaseUser as any).uid,
               email: firebaseUser.email || '',
               full_name: (firebaseUser as any).displayName || '',
-              role: (firebaseUser as any).role || 'user',
+              role: normalizeRole((firebaseUser as any).role || 'user'),
               permissions: (firebaseUser as any).permissions || [],
               avatar_url: (firebaseUser as any).photoURL || undefined,
               onboarding_completed: (firebaseUser as any).onboarding_completed || false
@@ -372,7 +373,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: fu.uid,
             email: fu.email || '',
             full_name: fu.displayName || '',
-            role: (fu as any).role || 'user',
+            role: normalizeRole((fu as any).role || 'user'),
             permissions: fu.permissions || [],
             avatar_url: fu.photoURL || undefined,
             onboarding_completed: fu.onboarding_completed || false,
@@ -433,7 +434,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: fu.uid,
             email: fu.email || '',
             full_name: fu.displayName || '',
-            role: (fu as any).role || 'user',
+            role: normalizeRole((fu as any).role || 'user'),
             permissions: fu.permissions || [],
             avatar_url: fu.photoURL || undefined,
             onboarding_completed: fu.onboarding_completed || false,
