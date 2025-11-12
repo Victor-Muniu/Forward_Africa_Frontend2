@@ -162,6 +162,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     initFirebaseAdmin();
 
     const { email, password } = req.body;
+    const apiKey = process.env.FIREBASE_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('FIREBASE_API_KEY is not configured');
+    }
 
     // Validate input
     validation.validateCredentials(email, password);
@@ -171,7 +176,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('🔐 Login attempt for:', email);
 
-    // Get user from Firebase Auth
+    // Verify password using Firebase REST API
+    let authResponse;
+    try {
+      authResponse = await verifyPasswordWithFirebase(email, password, apiKey);
+    } catch (error: any) {
+      rateLimit.recordAttempt(email, false);
+      if (error.message === 'INVALID_PASSWORD' || error.message === 'EMAIL_NOT_FOUND') {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      throw error;
+    }
+
+    // Get user record from Firebase Auth
     let userRecord;
     try {
       userRecord = await admin.auth().getUserByEmail(email);
@@ -255,7 +272,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       'MISSING_CREDENTIALS': { status: 400, message: 'Email and password are required' },
       'INVALID_EMAIL': { status: 400, message: 'Please enter a valid email address' },
       'WEAK_PASSWORD': { status: 400, message: 'Password must be at least 6 characters' },
-      'RATE_LIMITED': { status: 429, message: 'Too many login attempts. Please try again later.' }
+      'RATE_LIMITED': { status: 429, message: 'Too many login attempts. Please try again later.' },
+      'FIREBASE_API_KEY is not configured': { status: 500, message: 'Server configuration error' }
     };
 
     const errorInfo = errorMessages[error.message];
