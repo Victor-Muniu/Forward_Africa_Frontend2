@@ -557,7 +557,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading: loading || !isClient, // Show loading until client-side hydration is complete
     isAuthenticated: !!user,
     isAdmin: user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'content_manager' || user?.role === 'community_manager',
-    isSuperAdmin: user?.role === 'super_admin',
+    isSuperAdmin: user?.role === 'super_admin' || user?.role === 'admin',
     error,
     signIn,
     signUp,
