@@ -124,9 +124,27 @@ export const authService = {
     return null;
   },
 
-  // Get token for API requests (from cookie)
+  // Get token from localStorage (backup)
+  getTokenFromStorage(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem('auth_token');
+  },
+
+  // Set token in localStorage
+  setTokenInStorage(token: string): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('auth_token', token);
+  },
+
+  // Clear token from localStorage
+  clearTokenFromStorage(): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem('auth_token');
+  },
+
+  // Get token for API requests (from cookie, fallback to storage)
   getToken(): string | null {
-    return this.getTokenFromCookie();
+    return this.getTokenFromCookie() || this.getTokenFromStorage();
   },
 
   // Parse token to get user data
