@@ -6,6 +6,7 @@ import VideoPlayer from '../components/ui/VideoPlayer';
 import Layout from '../components/layout/Layout';
 import { Course, UserProgress, Certificate } from '../types';
 import { useCertificates } from '../hooks/useCertificates';
+import { useAuth } from '../contexts/AuthContext';
 import { downloadCertificate } from '../utils/certificateGenerator';
 import Image from 'next/image';
 import CourseProgressDashboard from '../components/ui/CourseProgressDashboard';
@@ -13,6 +14,7 @@ import CourseProgressDashboard from '../components/ui/CourseProgressDashboard';
 const CoursePage: React.FC = () => {
   const router = useRouter();
   const { courseId } = router.query;
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
