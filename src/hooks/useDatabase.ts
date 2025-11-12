@@ -403,7 +403,25 @@ export const useInstructors = () => {
 
     try {
       const data = await instructorAPI.getAllInstructors();
-      setInstructors(data);
+
+      // Normalize possible response shapes: Instructor[], null, { success: boolean }, { data: Instructor[] }
+      let instructorsArray: Instructor[] = [];
+
+      if (Array.isArray(data)) {
+        instructorsArray = data as Instructor[];
+      } else if (data && typeof data === 'object') {
+        if (Array.isArray((data as any).data)) {
+          instructorsArray = (data as any).data as Instructor[];
+        } else if (Array.isArray((data as any).instructors)) {
+          instructorsArray = (data as any).instructors as Instructor[];
+        } else {
+          instructorsArray = [];
+        }
+      } else {
+        instructorsArray = [];
+      }
+
+      setInstructors(instructorsArray);
     } catch (err) {
       console.error('Failed to fetch instructors:', err);
       setError('Failed to load instructors');
