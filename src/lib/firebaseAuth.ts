@@ -154,9 +154,9 @@ export const firebaseAuthService = {
     try {
       console.log('🔐 Firebase Auth: Signing in...');
 
-      // Fail fast if API key not configured in client env
+      // If API key is not configured in environment, warn but continue using the default firebaseConfig
       if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        throw new FirebaseAuthError('MISSING_API_KEY', 'Missing NEXT_PUBLIC_FIREBASE_API_KEY. Add it to project environment variables and rebuild the app.');
+        console.warn('⚠️ NEXT_PUBLIC_FIREBASE_API_KEY not set — falling back to built-in firebaseConfig defaults. For production, set NEXT_PUBLIC_FIREBASE_API_KEY in project environment variables.');
       }
 
       const { user: firebaseUser } = await signInWithEmailAndPassword(
@@ -204,9 +204,9 @@ export const firebaseAuthService = {
     try {
       console.log('📝 Firebase Auth: Signing up...');
 
-      // Fail fast if API key not configured in client env
+      // If API key is not configured in environment, warn but continue using the default firebaseConfig
       if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        throw new FirebaseAuthError('MISSING_API_KEY', 'Missing NEXT_PUBLIC_FIREBASE_API_KEY. Add it to project environment variables and rebuild the app.');
+        console.warn('⚠️ NEXT_PUBLIC_FIREBASE_API_KEY not set — falling back to built-in firebaseConfig defaults. For production, set NEXT_PUBLIC_FIREBASE_API_KEY in project environment variables.');
       }
 
       const { user: firebaseUser } = await createUserWithEmailAndPassword(
