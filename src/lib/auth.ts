@@ -501,25 +501,37 @@ export const authService = {
 
   // Get valid token (refresh if needed)
   getValidToken: async (): Promise<string> => {
+    // Prefer stored token when still valid
     const token = authService.getToken();
 
-    if (!token) {
-      throw new AuthError('NO_TOKEN', 'No authentication token');
-    }
-
-    // If token is expired or will expire soon, refresh it
-    if (authService.shouldRefreshToken()) {
-      try {
-        const refreshResponse = await authService.refreshToken();
-        return refreshResponse.token;
-      } catch (error) {
-        // If refresh fails, clear auth data and throw error
-        authService.clearAuthData();
-        throw new AuthError('SESSION_EXPIRED', 'Session expired. Please login again.');
+    if (token) {
+      // If token is expired or will expire soon, attempt refresh
+      if (authService.shouldRefreshToken()) {
+        try {
+          const refreshResponse = await authService.refreshToken();
+          return refreshResponse.token;
+        } catch (error) {
+          // If refresh fails, clear stored auth data but try Firebase session next
+          authService.clearAuthData();
+          console.warn('Auth refresh failed, will try Firebase session as fallback');
+        }
+      } else {
+        return token;
       }
     }
 
-    return token;
+    // If there's no stored token or refresh failed, try to use Firebase Auth ID token as a fallback
+    if (typeof window !== 'undefined' && firebaseAuth?.currentUser) {
+      try {
+        const idToken = await firebaseAuth.currentUser.getIdToken();
+        console.log('Using Firebase ID token as fallback auth token');
+        return idToken;
+      } catch (err) {
+        console.warn('Failed to obtain Firebase ID token fallback:', err);
+      }
+    }
+
+    throw new AuthError('NO_TOKEN', 'No authentication token available');
   },
 
   // Enhanced profile fetching
