@@ -7,6 +7,7 @@ import NotificationsDropdown from '../ui/NotificationsDropdown';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuthEnhanced } from '../../hooks/useAuthEnhanced';
 import { usePermissions } from '../../contexts/PermissionContext';
+import { normalizeRole } from '../../utils/roles';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
