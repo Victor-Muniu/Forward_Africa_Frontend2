@@ -125,11 +125,9 @@ const convertFirebaseUser = async (firebaseUser: User): Promise<FirebaseUser> =>
       return defaultUser;
     }
   } catch (error: any) {
-    console.error('❌ Error converting Firebase user:', error);
-
-    // If it's a permission error, return a minimal user object
-    if (error.code === 'permission-denied' || error.message?.includes('permission')) {
-      console.warn('⚠️ Permission denied when accessing user document. Returning minimal user data.');
+    // If it's a permission error, return a minimal user object and warn (don't throw)
+    if (error?.code === 'permission-denied' || (error?.message && error.message.toLowerCase().includes('permission'))) {
+      console.warn('⚠️ Permission denied when accessing user document. Returning minimal user data. Check Firestore security rules to allow read access to user documents if desired.');
       return {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -144,6 +142,7 @@ const convertFirebaseUser = async (firebaseUser: User): Promise<FirebaseUser> =>
       };
     }
 
+    console.error('❌ Error converting Firebase user:', error);
     throw new FirebaseAuthError('USER_CONVERSION_FAILED', error.message || 'Failed to convert user data', error);
   }
 };
