@@ -19,7 +19,20 @@ const Header: React.FC = () => {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
   const { user, profile, enhancedSignOut } = useAuthEnhanced();
   const { userRole } = usePermissions();
-  const canAccessAdmin = userRole === 'super_admin' || userRole === 'admin' || userRole === 'content_manager';
+  const [showAdminLink, setShowAdminLink] = useState(false);
+
+  useEffect(() => {
+    // Determine role from multiple sources: PermissionContext (best), profile, user
+    const roleCandidate = userRole || profile?.role || user?.role;
+    const normalized = normalizeRole(roleCandidate as any);
+
+    // Also allow access if explicit permissions include system full access
+    const permissions = (profile?.permissions || user?.permissions || []) as string[];
+
+    const hasFullAccess = permissions.includes('system:full_access') || permissions.includes('audit:view_logs');
+
+    setShowAdminLink(normalized === 'super_admin' || normalized === 'admin' || normalized === 'content_manager' || hasFullAccess);
+  }, [userRole, profile, user]);
 
   useEffect(() => {
     const handleScroll = () => {
