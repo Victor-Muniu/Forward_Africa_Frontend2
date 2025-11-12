@@ -210,6 +210,29 @@ export const authService = {
     return isNaN(expiry) ? null : expiry;
   },
 
+  // Session timestamps helpers
+  updateLastActivity: (timestamp?: number) => {
+    if (typeof window === 'undefined') return;
+    const t = timestamp || Date.now();
+    localStorage.setItem('forward_africa_last_activity', t.toString());
+  },
+
+  getLastActivity: (): number | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem('forward_africa_last_activity');
+    if (!v) return null;
+    const n = parseInt(v);
+    return isNaN(n) ? null : n;
+  },
+
+  getSessionStart: (): number | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem('forward_africa_session_start');
+    if (!v) return null;
+    const n = parseInt(v);
+    return isNaN(n) ? null : n;
+  },
+
   // Check if token is expired
   isTokenExpired: (): boolean => {
     const token = authService.getToken();
