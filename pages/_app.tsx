@@ -84,20 +84,7 @@ const ClientOnlyComponents = () => {
     return null;
   }
 
-  return (
-    <>
-      {/* Token Status Indicator - Only show in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <TokenStatusIndicator
-            showDetails={true}
-            showRefreshButton={true}
-            className=""
-          />
-        </div>
-      )}
-    </>
-  );
+  return null;
 };
 
 export default function App({ Component, pageProps }: AppProps) {
