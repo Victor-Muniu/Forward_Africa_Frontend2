@@ -265,22 +265,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error: any) {
-    console.error('❌ Login error:', error);
+    console.error('❌ Login error:', error?.message || error);
 
     const errorMessages: { [key: string]: { status: number; message: string } } = {
       'MISSING_CREDENTIALS': { status: 400, message: 'Email and password are required' },
       'INVALID_EMAIL': { status: 400, message: 'Please enter a valid email address' },
       'WEAK_PASSWORD': { status: 400, message: 'Password must be at least 6 characters' },
       'RATE_LIMITED': { status: 429, message: 'Too many login attempts. Please try again later.' },
-      'FIREBASE_API_KEY is not configured': { status: 500, message: 'Server configuration error' }
+      'FIREBASE_API_KEY is not configured': { status: 500, message: 'Server configuration error - FIREBASE_API_KEY missing' }
     };
 
-    const errorInfo = errorMessages[error.message];
+    const errorInfo = errorMessages[error?.message];
     if (errorInfo) {
+      console.error('Mapped error response:', errorInfo);
       return res.status(errorInfo.status).json({ error: errorInfo.message });
     }
 
-    return res.status(500).json({ error: 'Login failed. Please try again.' });
+    // Log full error for debugging
+    console.error('Unmapped error:', error?.message, error?.toString());
+    return res.status(500).json({
+      error: 'Login failed. Please try again.',
+      debug: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    });
   }
 }
 
