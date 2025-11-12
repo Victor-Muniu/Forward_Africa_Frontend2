@@ -65,6 +65,10 @@ const CoursePage: React.FC = () => {
   }, [courseId, getCertificate, isClient]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) {
+      return;
+    }
+
     const fetchCourseData = async () => {
       if (courseId && typeof courseId === 'string') {
         try {
