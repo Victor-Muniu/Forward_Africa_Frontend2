@@ -51,15 +51,16 @@ const CoursesPage: React.FC = () => {
   useEffect(() => {
     console.log('🔄 CoursesPage Loading State:', {
       apiLoading,
+      authLoading,
       localLoading: loading,
       allCoursesLength: allCourses.length,
       apiError
     });
 
-    if (!apiLoading) {
+    if (!apiLoading && !authLoading) {
       setLoading(false);
     }
-  }, [apiLoading, allCourses, apiError]);
+  }, [apiLoading, authLoading, allCourses, apiError]);
 
   // Get unique categories from courses - same as HomePage
   const allCategories = Array.from(new Set(allCourses.map(course => course.category)))
