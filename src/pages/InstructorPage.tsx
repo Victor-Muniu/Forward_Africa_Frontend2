@@ -74,12 +74,13 @@ const InstructorPage: React.FC = () => {
         console.log('🔍 Fetching instructor data for ID:', instructorId);
 
         // Fetch instructor details
-        const instructorData = await instructorAPI.getInstructor(instructorId);
+        const instructorData: any = await instructorAPI.getInstructor(instructorId);
         console.log('📋 Instructor data received:', instructorData);
 
-        if (instructorData) {
-          setInstructor(instructorData);
+        if (instructorData && typeof instructorData === 'object' && 'id' in instructorData) {
+          setInstructor(instructorData as Instructor);
         } else {
+          console.warn('Instructor API returned unexpected shape:', instructorData);
           throw new Error('Instructor not found');
         }
 
