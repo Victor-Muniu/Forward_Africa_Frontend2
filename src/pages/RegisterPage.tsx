@@ -244,24 +244,26 @@ const RegisterPage: React.FC = () => {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      await signUp(registerData);
-      setSuccess('Account created successfully! Welcome to Forward Africa!');
 
-      // Wait for user state to be updated before redirecting
-      setTimeout(() => {
-        // Force a re-render by checking user state
-        if (user) {
-          router.push('/home');
-        } else {
-          // If user state is not updated yet, wait a bit more
-          setTimeout(() => {
-            router.push('/home');
-          }, 500);
-        }
-      }, 1500);
+      // Call server-side API to create Firebase user and Firestore document
+      const resp = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Registration failed' }));
+        throw new Error(err.error || 'Registration failed');
+      }
+
+      setSuccess('Account created successfully! Please check your email for verification if enabled.');
+
+      // Redirect to login after short delay
+      setTimeout(() => router.push('/login'), 1200);
     } catch (error: any) {
-      // Error is already handled in AuthContext, but we can add additional handling here
-      console.log('Registration error caught in component:', error);
+      console.log('Registration error:', error);
+      setError(error.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

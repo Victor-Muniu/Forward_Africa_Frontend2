@@ -125,11 +125,9 @@ const convertFirebaseUser = async (firebaseUser: User): Promise<FirebaseUser> =>
       return defaultUser;
     }
   } catch (error: any) {
-    console.error('❌ Error converting Firebase user:', error);
-
-    // If it's a permission error, return a minimal user object
-    if (error.code === 'permission-denied' || error.message?.includes('permission')) {
-      console.warn('⚠️ Permission denied when accessing user document. Returning minimal user data.');
+    // If it's a permission error, return a minimal user object and warn (don't throw)
+    if (error?.code === 'permission-denied' || (error?.message && error.message.toLowerCase().includes('permission'))) {
+      console.warn('⚠️ Permission denied when accessing user document. Returning minimal user data. Check Firestore security rules to allow read access to user documents if desired.');
       return {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -144,6 +142,7 @@ const convertFirebaseUser = async (firebaseUser: User): Promise<FirebaseUser> =>
       };
     }
 
+    console.error('❌ Error converting Firebase user:', error);
     throw new FirebaseAuthError('USER_CONVERSION_FAILED', error.message || 'Failed to convert user data', error);
   }
 };
@@ -153,6 +152,11 @@ export const firebaseAuthService = {
   signIn: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
       console.log('🔐 Firebase Auth: Signing in...');
+
+      // If API key is not configured in environment, warn but continue using the default firebaseConfig
+      if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        console.warn('⚠️ NEXT_PUBLIC_FIREBASE_API_KEY not set — falling back to built-in firebaseConfig defaults. For production, set NEXT_PUBLIC_FIREBASE_API_KEY in project environment variables.');
+      }
 
       const { user: firebaseUser } = await signInWithEmailAndPassword(
         auth,
@@ -169,6 +173,11 @@ export const firebaseAuthService = {
       };
     } catch (error: any) {
       console.error('❌ Firebase Auth: Sign in failed:', error);
+
+      // Network error guidance
+      if (error?.code === 'auth/network-request-failed' || (error?.message && error.message.toLowerCase().includes('network'))) {
+        throw new FirebaseAuthError('NETWORK_ERROR', 'Network error: could not reach Firebase Auth. Check NEXT_PUBLIC_FIREBASE_API_KEY, authorized domains in Firebase console, and that Email/Password provider is enabled.');
+      }
 
       // Handle specific Firebase error codes
       switch (error.code) {
@@ -188,10 +197,16 @@ export const firebaseAuthService = {
     }
   },
 
+
   // Sign up with email and password
   signUp: async (userData: RegisterData): Promise<AuthResponse> => {
     try {
       console.log('📝 Firebase Auth: Signing up...');
+
+      // If API key is not configured in environment, warn but continue using the default firebaseConfig
+      if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        console.warn('⚠️ NEXT_PUBLIC_FIREBASE_API_KEY not set — falling back to built-in firebaseConfig defaults. For production, set NEXT_PUBLIC_FIREBASE_API_KEY in project environment variables.');
+      }
 
       const { user: firebaseUser } = await createUserWithEmailAndPassword(
         auth,
@@ -238,6 +253,11 @@ export const firebaseAuthService = {
       };
     } catch (error: any) {
       console.error('❌ Firebase Auth: Sign up failed:', error);
+
+      // Network error guidance
+      if (error?.code === 'auth/network-request-failed' || (error?.message && error.message.toLowerCase().includes('network'))) {
+        throw new FirebaseAuthError('NETWORK_ERROR', 'Network error: could not reach Firebase Auth. Check NEXT_PUBLIC_FIREBASE_API_KEY, authorized domains in Firebase console, and that Email/Password provider is enabled.');
+      }
 
       // Handle specific Firebase error codes
       switch (error.code) {

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from 'next/router';
 import { authService, AuthUser, LoginCredentials, RegisterData } from '../lib/auth';
 import { useFirebaseAuth } from './FirebaseAuthContext';
+import { firebaseAuthService, FirebaseUser as FBUser } from '../lib/firebaseAuth';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -277,7 +278,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Please enter a valid email address');
       }
 
-      const response = await authService.login(credentials);
+      let response;
+      if (typeof window !== 'undefined') {
+        // Use Firebase client SDK when running in browser
+        const fbResp = await firebaseAuthService.signIn(credentials);
+        const fu = fbResp.user as FBUser;
+        response = {
+          token: null,
+          refreshToken: null,
+          user: {
+            id: fu.uid,
+            email: fu.email || '',
+            full_name: fu.displayName || '',
+            role: (fu as any).role || 'user',
+            permissions: fu.permissions || [],
+            avatar_url: fu.photoURL || undefined,
+            onboarding_completed: fu.onboarding_completed || false,
+            industry: fu.industry,
+            experience_level: fu.experience_level,
+            business_stage: fu.business_stage,
+            country: fu.country,
+            state_province: fu.state_province,
+            city: fu.city
+          }
+        } as any;
+      } else {
+        response = await authService.login(credentials);
+      }
       setUser(response.user);
       console.log('✅ AuthContext: Sign in successful');
     } catch (error) {
@@ -313,7 +340,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       console.log('📝 AuthContext: Signing up...');
 
-      const response = await authService.register(data);
+      let response;
+      if (typeof window !== 'undefined') {
+        const fbResp = await firebaseAuthService.signUp(data);
+        const fu = fbResp.user as FBUser;
+        response = {
+          token: null,
+          refreshToken: null,
+          user: {
+            id: fu.uid,
+            email: fu.email || '',
+            full_name: fu.displayName || '',
+            role: (fu as any).role || 'user',
+            permissions: fu.permissions || [],
+            avatar_url: fu.photoURL || undefined,
+            onboarding_completed: fu.onboarding_completed || false,
+            industry: fu.industry,
+            experience_level: fu.experience_level,
+            business_stage: fu.business_stage,
+            country: fu.country,
+            state_province: fu.state_province,
+            city: fu.city
+          }
+        } as any;
+      } else {
+        response = await authService.register(data);
+      }
+
       setUser(response.user);
       console.log('✅ AuthContext: Sign up successful');
     } catch (error) {
@@ -353,7 +406,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       console.log('🚪 AuthContext: Signing out...');
-      authService.logout();
+      if (typeof window !== 'undefined') {
+        await firebaseAuthService.signOut();
+      } else {
+        await authService.logout();
+      }
       setUser(null);
       setError(null);
       console.log('✅ AuthContext: Sign out successful');
@@ -375,7 +432,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       console.log('🔄 AuthContext: Updating profile with data:', profileData);
-      const updatedUser = await authService.updateProfile(profileData);
+      let updatedUser;
+      if (typeof window !== 'undefined') {
+        const fu = await firebaseAuthService.updateProfile(profileData as any);
+        updatedUser = {
+          id: fu.uid,
+          email: fu.email || '',
+          full_name: fu.displayName || '',
+          role: (fu as any).role || 'user',
+          permissions: fu.permissions || [],
+          avatar_url: fu.photoURL || undefined,
+          onboarding_completed: fu.onboarding_completed || false,
+          industry: fu.industry,
+          experience_level: fu.experience_level,
+          business_stage: fu.business_stage,
+          country: fu.country,
+          state_province: fu.state_province,
+          city: fu.city
+        } as AuthUser;
+      } else {
+        updatedUser = await authService.updateProfile(profileData);
+      }
+
       console.log('✅ AuthContext: Profile updated, new user data:', updatedUser);
 
       // Update the user state with the new data
