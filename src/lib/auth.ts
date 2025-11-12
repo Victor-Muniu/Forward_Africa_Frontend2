@@ -649,7 +649,14 @@ export const authService = {
   isAuthenticated: (): boolean => {
     const token = authService.getToken();
     const user = authService.getUser();
-    return !!(token && user && !authService.isTokenExpired());
+
+    // If stored token is valid return true
+    if (token && user && !authService.isTokenExpired()) return true;
+
+    // Otherwise check Firebase session
+    if (typeof window !== 'undefined' && firebaseAuth?.currentUser) return true;
+
+    return false;
   },
 };
 
