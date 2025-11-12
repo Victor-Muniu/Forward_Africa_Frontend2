@@ -323,6 +323,11 @@ export const authService = {
       const data: AuthResponse = await response.json();
       console.log('✅ AuthService: Token refreshed');
 
+      // Store refreshed token in localStorage
+      if (data.token) {
+        this.setTokenInStorage(data.token);
+      }
+
       return data;
     } catch (error) {
       console.error('❌ AuthService: Token refresh error:', error);
