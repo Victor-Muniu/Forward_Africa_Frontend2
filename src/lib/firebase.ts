@@ -25,41 +25,20 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-// Connect to emulators in development
+// Emulator auto-connect disabled to avoid showing emulator banners in the UI.
+// If you want to enable the emulator locally, re-enable the block below and configure hosts/ports.
+/*
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  // Only connect to emulators if not already connected
   try {
-    // Firestore emulator
-    try {
-      if (!(db as any)._delegate._databaseId.projectId.includes('demo-')) {
-        connectFirestoreEmulator(db, 'localhost', 8080);
-      }
-    } catch {
-      // Already connected
-    }
-
-    // Auth emulator
-    try {
-      connectAuthEmulator(auth, 'http://localhost:9099');
-    } catch {
-      // Already connected
-    }
-
-    // Storage emulator
-    try {
-      if (!(storage as any)._delegate._host.includes('localhost')) {
-        connectStorageEmulator(storage, 'localhost', 9199);
-      }
-    } catch {
-      // Already connected
-    }
-
-    // Connected to Firebase emulators (development). Suppress noisy message in console.
-    console.debug('Connected to Firebase emulators (development)');
+    // connectFirestoreEmulator(db, 'localhost', 8080);
+    // connectAuthEmulator(auth, 'http://localhost:9099');
+    // connectStorageEmulator(storage, 'localhost', 9199);
+    // console.debug('Connected to Firebase emulators (development)');
   } catch (error) {
     console.log('⚠️ Firebase emulators already connected or not available');
   }
 }
+*/
 
 // Initialize Analytics only on client side
 let analytics;
