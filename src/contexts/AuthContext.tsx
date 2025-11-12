@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { authService, AuthUser, LoginCredentials, RegisterData } from '../lib/auth';
+import { auth } from '../lib/firebase';
 import { useFirebaseAuth } from './FirebaseAuthContext';
 import { firebaseAuthService, FirebaseUser as FBUser } from '../lib/firebaseAuth';
 
@@ -113,6 +114,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!token) {
         console.log('🔍 AuthContext: No token found');
+
+        // Try to use Firebase client auth if available (handles persistence across refresh)
+        try {
+          const firebaseUser = auth.currentUser;
+          if (firebaseUser) {
+            // Convert minimal Firebase user to AuthUser shape
+            const converted: AuthUser = {
+              id: (firebaseUser as any).uid,
+              email: firebaseUser.email || '',
+              full_name: (firebaseUser as any).displayName || '',
+              role: (firebaseUser as any).role || 'user',
+              permissions: (firebaseUser as any).permissions || [],
+              avatar_url: (firebaseUser as any).photoURL || undefined,
+              onboarding_completed: (firebaseUser as any).onboarding_completed || false
+            } as AuthUser;
+
+            setUser(converted);
+            setError(null);
+            return;
+          }
+        } catch (fbErr) {
+          console.warn('⚠️ AuthContext: Firebase check failed', fbErr);
+        }
+
         setUser(null);
         return;
       }
