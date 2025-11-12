@@ -116,7 +116,7 @@ const CoursesPage: React.FC = () => {
   });
 
   // Show blank loading state while checking authentication - prevent showing content to unauthenticated users
-  if (authLoading) {
+  if (!hasCheckedToken || authLoading) {
     console.log('🎬 CoursesPage: Checking authentication...');
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
