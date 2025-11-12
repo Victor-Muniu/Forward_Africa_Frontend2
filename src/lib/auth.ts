@@ -138,6 +138,11 @@ export const authService = {
           localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
         }
 
+        // Store session timestamps for client-side session policy
+        const now = Date.now();
+        localStorage.setItem('forward_africa_session_start', now.toString());
+        localStorage.setItem('forward_africa_last_activity', now.toString());
+
         console.log('✅ Auth data stored successfully');
       } catch (error) {
         console.error('❌ Failed to store auth data:', error);
@@ -203,6 +208,29 @@ export const authService = {
 
     const expiry = parseInt(expiryStr);
     return isNaN(expiry) ? null : expiry;
+  },
+
+  // Session timestamps helpers
+  updateLastActivity: (timestamp?: number) => {
+    if (typeof window === 'undefined') return;
+    const t = timestamp || Date.now();
+    localStorage.setItem('forward_africa_last_activity', t.toString());
+  },
+
+  getLastActivity: (): number | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem('forward_africa_last_activity');
+    if (!v) return null;
+    const n = parseInt(v);
+    return isNaN(n) ? null : n;
+  },
+
+  getSessionStart: (): number | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem('forward_africa_session_start');
+    if (!v) return null;
+    const n = parseInt(v);
+    return isNaN(n) ? null : n;
   },
 
   // Check if token is expired
