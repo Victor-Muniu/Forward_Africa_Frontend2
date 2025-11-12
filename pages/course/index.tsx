@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useAuth } from '../src/contexts/AuthContext';
 
 export default function CourseIndex() {
   const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
