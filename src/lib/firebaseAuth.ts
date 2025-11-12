@@ -14,6 +14,8 @@ import { auth } from './firebase';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { normalizeRole } from '../utils/roles';
+import { API_BASE_URL } from './mysql';
+import { authService } from './auth';
 
 export interface FirebaseUser {
   uid: string;
@@ -167,6 +169,40 @@ export const firebaseAuthService = {
 
       const user = await convertFirebaseUser(firebaseUser);
 
+      // Exchange Firebase ID token for backend app token and refresh token
+      if (typeof window !== 'undefined') {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const resp = await fetch(`${API_BASE_URL}/auth/firebase/exchange`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          });
+
+          if (resp.ok) {
+            const data = await resp.json();
+            // Expecting { token, refreshToken, user }
+            const appUser = data.user || {
+              id: user.uid,
+              email: user.email || '',
+              full_name: user.displayName || '',
+              role: user.role || 'user',
+              permissions: user.permissions || [],
+              onboarding_completed: user.onboarding_completed || false
+            };
+
+            if (data.token && data.refreshToken) {
+              authService.setAuthData(data.token, data.refreshToken, appUser as any);
+              console.log('✅ Firebase Auth: Exchanged ID token and stored app auth data');
+            }
+          } else {
+            console.warn('⚠️ Firebase token exchange failed:', resp.status);
+          }
+        } catch (ex) {
+          console.warn('⚠️ Firebase token exchange error:', ex);
+        }
+      }
+
       console.log('✅ Firebase Auth: Sign in successful');
       return {
         user,
@@ -306,6 +342,39 @@ export const firebaseAuthService = {
 
       const user = await convertFirebaseUser(firebaseUser);
 
+      // Exchange Firebase ID token for backend app token and refresh token (client-side only)
+      if (typeof window !== 'undefined') {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const resp = await fetch(`${API_BASE_URL}/auth/firebase/exchange`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          });
+
+          if (resp.ok) {
+            const data = await resp.json();
+            const appUser = data.user || {
+              id: user.uid,
+              email: user.email || '',
+              full_name: user.displayName || '',
+              role: user.role || 'user',
+              permissions: user.permissions || [],
+              onboarding_completed: user.onboarding_completed || false
+            };
+
+            if (data.token && data.refreshToken) {
+              authService.setAuthData(data.token, data.refreshToken, appUser as any);
+              console.log('✅ Firebase Auth: Exchanged ID token and stored app auth data (Google)');
+            }
+          } else {
+            console.warn('⚠️ Firebase token exchange failed (Google):', resp.status);
+          }
+        } catch (ex) {
+          console.warn('⚠️ Firebase token exchange error (Google):', ex);
+        }
+      }
+
       console.log('✅ Firebase Auth: Google sign in successful');
       return {
         user,
@@ -418,6 +487,40 @@ export const firebaseAuthService = {
       if (firebaseUser) {
         try {
           const user = await convertFirebaseUser(firebaseUser);
+
+          // Attempt token exchange if we don't already have an app token
+          if (typeof window !== 'undefined') {
+            try {
+              const existingToken = authService.getToken();
+              if (!existingToken) {
+                const idToken = await firebaseUser.getIdToken();
+                const resp = await fetch(`${API_BASE_URL}/auth/firebase/exchange`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ idToken })
+                });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  const appUser = data.user || {
+                    id: user.uid,
+                    email: user.email || '',
+                    full_name: user.displayName || '',
+                    role: user.role || 'user',
+                    permissions: user.permissions || [],
+                    onboarding_completed: user.onboarding_completed || false
+                  };
+
+                  if (data.token && data.refreshToken) {
+                    authService.setAuthData(data.token, data.refreshToken, appUser as any);
+                    console.log('✅ Firebase Auth: Exchanged ID token on auth state change');
+                  }
+                }
+              }
+            } catch (ex) {
+              console.warn('⚠️ Token exchange on auth state change failed:', ex);
+            }
+          }
+
           callback(user);
         } catch (error) {
           console.error('❌ Error in auth state change:', error);
