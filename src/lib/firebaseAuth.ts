@@ -409,7 +409,7 @@ export const firebaseAuthService = {
 
   // Check if user is super admin
   isSuperAdmin: (user: FirebaseUser | null): boolean => {
-    return user?.role === 'super_admin';
+    return user?.role === 'super_admin' || user?.role === 'admin';
   },
 
   // Auth state change listener
