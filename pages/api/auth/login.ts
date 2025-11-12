@@ -244,10 +244,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...userData
     };
 
-    // Set JWT token in HTTP-only cookie
+    // Set JWT token in cookie (accessible to JavaScript)
     const cookieOptions = [
       'Path=/',
-      'HttpOnly',
       'SameSite=Strict',
       `Max-Age=${tokenExpiryMs / 1000}`, // Convert ms to seconds
       process.env.NODE_ENV === 'production' ? 'Secure' : ''
