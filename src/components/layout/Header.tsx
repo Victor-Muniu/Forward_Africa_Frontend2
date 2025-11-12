@@ -207,7 +207,7 @@ const Header: React.FC = () => {
                           <User className="h-4 w-4 mr-3" />
                           Profile Settings
                         </Link>
-                        {canAccessAdmin && (
+                        {showAdminLink && (
                           <Link
                             href="/admin"
                             className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
