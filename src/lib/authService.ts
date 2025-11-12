@@ -103,8 +103,9 @@ export const authService = {
   // Check if token exists and is valid
   hasValidToken(): boolean {
     if (typeof document === 'undefined') return false;
-    
-    const token = this.getTokenFromCookie();
+
+    // Check cookie first, then fallback to localStorage
+    const token = this.getToken();
     if (!token) return false;
 
     return !jwtUtils.isTokenExpired(token);
