@@ -15,6 +15,10 @@ export default function CourseIndex() {
   }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) {
+      return;
+    }
+
     const fetchAndRedirect = async () => {
       try {
         // Check if we're already on a specific course route
