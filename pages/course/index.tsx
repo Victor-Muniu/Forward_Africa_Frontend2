@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../src/contexts/AuthContext';
-import { hasValidToken } from '../src/lib/tokenValidator';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasValidToken } from '@/lib/tokenValidator';
 
 export default function CourseIndex() {
   const router = useRouter();
