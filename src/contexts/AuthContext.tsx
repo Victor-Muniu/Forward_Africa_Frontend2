@@ -278,7 +278,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Please enter a valid email address');
       }
 
-      const response = await authService.login(credentials);
+      let response;
+      if (typeof window !== 'undefined') {
+        // Use Firebase client SDK when running in browser
+        const fbResp = await firebaseAuthService.signIn(credentials);
+        const fu = fbResp.user as FBUser;
+        response = {
+          token: null,
+          refreshToken: null,
+          user: {
+            id: fu.uid,
+            email: fu.email || '',
+            full_name: fu.displayName || '',
+            role: (fu as any).role || 'user',
+            permissions: fu.permissions || [],
+            avatar_url: fu.photoURL || undefined,
+            onboarding_completed: fu.onboarding_completed || false,
+            industry: fu.industry,
+            experience_level: fu.experience_level,
+            business_stage: fu.business_stage,
+            country: fu.country,
+            state_province: fu.state_province,
+            city: fu.city
+          }
+        } as any;
+      } else {
+        response = await authService.login(credentials);
+      }
       setUser(response.user);
       console.log('✅ AuthContext: Sign in successful');
     } catch (error) {
