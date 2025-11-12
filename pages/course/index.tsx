@@ -97,7 +97,7 @@ export default function CourseIndex() {
     };
 
     fetchAndRedirect();
-  }, [router]);
+  }, [router, authLoading, isAuthenticated]);
 
   // Show loading while fetching and redirecting
   return (
