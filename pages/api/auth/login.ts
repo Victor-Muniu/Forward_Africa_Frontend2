@@ -22,6 +22,34 @@ const initFirebaseAdmin = () => {
   }
 };
 
+// Verify password using Firebase REST API
+const verifyPasswordWithFirebase = async (email: string, password: string, apiKey: string): Promise<any> => {
+  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email,
+      password,
+      returnSecureToken: true
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    if (error.error?.message === 'INVALID_PASSWORD') {
+      throw new Error('INVALID_PASSWORD');
+    }
+    if (error.error?.message === 'EMAIL_NOT_FOUND') {
+      throw new Error('EMAIL_NOT_FOUND');
+    }
+    throw new Error(error.error?.message || 'Password verification failed');
+  }
+
+  return response.json();
+};
+
 // JWT utilities
 class JWTManager {
   private static JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
