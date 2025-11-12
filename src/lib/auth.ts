@@ -110,6 +110,8 @@ const jwtUtils = {
   }
 };
 
+import { auth as firebaseAuth } from './firebase';
+
 export const authService = {
   // Store token and user data with enhanced error handling
   setAuthData: (token: string, refreshToken: string, user: AuthUser) => {
