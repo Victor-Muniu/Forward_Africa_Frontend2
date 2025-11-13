@@ -211,7 +211,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (userDoc.exists) {
         const data = userDoc.data();
-        userRole = data?.role || 'user';
+        let rawRole = data?.role || 'user';
+
+        // Normalize role to system format (convert to lowercase and map aliases)
+        const normalizeRole = (role: string): string => {
+          const lowerRole = role?.toLowerCase().trim() || 'user';
+
+          // Map common role aliases to system roles
+          const roleMap: { [key: string]: string } = {
+            'admin': 'super_admin',
+            'super_admin': 'super_admin',
+            'superadmin': 'super_admin',
+            'content_manager': 'content_manager',
+            'content manager': 'content_manager',
+            'community_manager': 'community_manager',
+            'community manager': 'community_manager',
+            'user_support': 'user_support',
+            'support': 'user_support',
+            'user': 'user'
+          };
+
+          return roleMap[lowerRole] || 'user';
+        };
+
+        userRole = normalizeRole(rawRole);
         userPermissions = data?.permissions || [];
         userData = data || {};
       }
