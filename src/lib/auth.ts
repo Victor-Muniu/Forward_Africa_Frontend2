@@ -81,7 +81,11 @@ const jwtUtils = {
   // Parse JWT token without verification (for client-side expiry check)
   parseToken: (token: string): any => {
     try {
-      const payload = token.split('.')[1];
+      let payload = token.split('.')[1];
+      // Handle URL-safe base64 encoding
+      payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+      // Add padding if needed
+      payload += new Array(5 - (payload.length % 4)).join('=');
       return JSON.parse(atob(payload));
     } catch (error) {
       throw new AuthError('INVALID_TOKEN', 'Invalid token format');
