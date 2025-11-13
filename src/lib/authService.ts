@@ -125,27 +125,28 @@ export const authService = {
     return null;
   },
 
-  // Get token from localStorage (backup)
+  // Get token from localStorage (deprecated - use cookies only)
   getTokenFromStorage(): string | null {
-    if (typeof localStorage === 'undefined') return null;
-    return localStorage.getItem('auth_token');
+    // Deprecated: Only use cookies for authentication
+    return null;
   },
 
-  // Set token in localStorage
+  // Set token in localStorage (deprecated - use cookies only)
   setTokenInStorage(token: string): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem('auth_token', token);
+    // Deprecated: Tokens are now stored in cookies only
+    // This method is kept for backward compatibility but does nothing
   },
 
-  // Clear token from localStorage
+  // Clear token from localStorage (deprecated)
   clearTokenFromStorage(): void {
+    // Deprecated: Tokens are stored in cookies only
     if (typeof localStorage === 'undefined') return;
     localStorage.removeItem('auth_token');
   },
 
-  // Get token for API requests (from cookie, fallback to storage)
+  // Get token for API requests (from cookies only)
   getToken(): string | null {
-    return this.getTokenFromCookie() || this.getTokenFromStorage();
+    return this.getTokenFromCookie();
   },
 
   // Parse token to get user data
