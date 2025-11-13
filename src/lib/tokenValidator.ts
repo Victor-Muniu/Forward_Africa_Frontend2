@@ -9,17 +9,23 @@ const parseJWT = (token: string): any => {
 
     // Decode base64 with URL-safe padding
     let decoded = payload.replace(/-/g, '+').replace(/_/g, '/');
-    decoded += new Array(5 - (decoded.length % 4)).join('=');
 
-    // Use atob for browser compatibility
+    // Browser-only solution using atob
     if (typeof window !== 'undefined' && window.atob) {
-      return JSON.parse(window.atob(decoded));
-    } else if (typeof Buffer !== 'undefined') {
-      return JSON.parse(Buffer.from(decoded, 'base64').toString('utf8'));
+      const decodedString = atob(decoded);
+      return JSON.parse(
+        decodeURIComponent(
+          decodedString
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        )
+      );
     }
 
     return null;
   } catch (error) {
+    console.error('JWT Parse Error in tokenValidator:', error);
     return null;
   }
 };
