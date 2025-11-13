@@ -6,7 +6,15 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // Clear auth_token cookie by setting it to an empty value with past expiration
-  res.setHeader('Set-Cookie', 'auth_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+  // Match the cookie format used in login (without HttpOnly to keep it accessible to JavaScript)
+  const cookieOptions = [
+    'Path=/',
+    'SameSite=Strict',
+    'Max-Age=0',
+    process.env.NODE_ENV === 'production' ? 'Secure' : ''
+  ].filter(Boolean).join('; ');
+
+  res.setHeader('Set-Cookie', `auth_token=; ${cookieOptions}`);
 
   return res.status(200).json({
     message: 'Logged out successfully'
