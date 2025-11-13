@@ -42,9 +42,16 @@ const getTokenFromCookie = (): string | null => {
   try {
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'auth_token' && value) {
-        return decodeURIComponent(value);
+      const trimmed = cookie.trim();
+      if (trimmed.startsWith('auth_token=')) {
+        const value = trimmed.substring('auth_token='.length);
+        if (value) {
+          try {
+            return decodeURIComponent(value);
+          } catch (e) {
+            return value;
+          }
+        }
       }
     }
   } catch (error) {
