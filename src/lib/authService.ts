@@ -151,8 +151,8 @@ export const authService = {
 
   // Parse token to get user data
   getUserFromToken(): AuthUser | null {
-    // Try cookie first, then fallback to localStorage
-    const token = this.getToken();
+    // Use cookies only for token retrieval
+    const token = this.getTokenFromCookie();
     if (!token) return null;
 
     try {
@@ -354,7 +354,7 @@ export const authService = {
       // Clear token from storage
       this.clearTokenFromStorage();
 
-      console.log('✅ AuthService: Logout completed');
+      console.log('��� AuthService: Logout completed');
     } catch (error) {
       console.warn('⚠️ AuthService: Logout error:', error);
       // Still clear token even if logout fails
