@@ -232,6 +232,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.register(data);
       setUser(response.user);
       console.log('✅ AuthContext: Sign up successful');
+
+      // Redirect to home or onboarding page after successful signup
+      setTimeout(() => {
+        router.push('/home');
+      }, 100);
     } catch (error) {
       console.error('❌ AuthContext: Sign up error:', error);
 
