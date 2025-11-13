@@ -86,13 +86,25 @@ export const hasValidToken = (): boolean => {
     const token = getTokenFromCookie();
 
     if (!token) {
-      console.log('🔍 No token found in cookies');
+      console.log('🔍 No auth_token cookie found');
+      // Log all cookies for debugging
+      console.log('📦 Available cookies:', document.cookie);
       return false;
     }
 
-    if (isTokenExpired(token)) {
-      console.log('⏳ Token is expired');
-      return false;
+    console.log('📝 Token found in cookie, length:', token.length);
+
+    // Try to parse and validate
+    try {
+      if (isTokenExpired(token)) {
+        console.log('⏳ Token is expired');
+        return false;
+      }
+    } catch (parseError) {
+      // If parsing fails, still consider token as valid if it exists
+      // Let server handle validation
+      console.warn('⚠️ Could not parse token, but cookie exists:', parseError);
+      return true;
     }
 
     console.log('✅ Valid token found in cookies');
