@@ -161,10 +161,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const publicPaths = ['/', '/login', '/register'];
       const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
 
+      // Only redirect if user is on a protected page
+      // Don't redirect from login/register to prevent logout loop
       if (!isPublicPath) {
-        console.log('🚪 AuthContext: Redirecting unauthenticated user');
+        console.log('🚪 AuthContext: Redirecting unauthenticated user from protected page');
         router.push({ pathname: '/login', query: { redirect: currentPath } });
       }
+      // If on a public page like '/', stay there - don't force redirect
     }
   }, [user, loading, isClient, router]);
 
