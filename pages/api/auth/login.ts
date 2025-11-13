@@ -209,9 +209,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const db = admin.firestore();
       const userDoc = await db.collection('users').doc(userRecord.uid).get();
 
+      console.log('🔍 Firestore user lookup:', { uid: userRecord.uid, exists: userDoc.exists, data: userDoc.data() });
+
       if (userDoc.exists) {
         const data = userDoc.data();
         userRole = data?.role || 'user';
+        console.log('📋 User document found:', { role: userRole, userData: data });
         userPermissions = data?.permissions || [];
         userData = data || {};
       }
