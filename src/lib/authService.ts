@@ -61,11 +61,24 @@ export class AuthError extends Error {
 // JWT Token utilities for client-side verification
 const jwtUtils = {
   base64UrlDecode(str: string): string {
-    str += new Array(5 - str.length % 4).join('=');
-    return Buffer.from(
-      str.replace(/-/g, '+').replace(/_/g, '/'),
-      'base64'
-    ).toString('utf8');
+    // Handle both browser and Node.js environments
+    if (typeof window !== 'undefined' && window.atob) {
+      // Browser environment
+      const decoded = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+      return decodeURIComponent(
+        decoded
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+    } else {
+      // Node.js environment (fallback for server-side)
+      str += new Array(5 - str.length % 4).join('=');
+      return Buffer.from(
+        str.replace(/-/g, '+').replace(/_/g, '/'),
+        'base64'
+      ).toString('utf8');
+    }
   },
 
   parseToken(token: string): any {
@@ -74,6 +87,7 @@ const jwtUtils = {
       if (!payload) throw new Error('Invalid token');
       return JSON.parse(jwtUtils.base64UrlDecode(payload));
     } catch (error) {
+      console.error('JWT Parse Error:', error);
       throw new AuthError('INVALID_TOKEN', 'Invalid token format');
     }
   },
