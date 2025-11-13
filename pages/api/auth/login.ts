@@ -219,7 +219,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           // Map common role aliases to system roles
           const roleMap: { [key: string]: string } = {
-            'admin': 'super_admin',
+            'admin': 'admin',
             'super_admin': 'super_admin',
             'superadmin': 'super_admin',
             'content_manager': 'content_manager',
