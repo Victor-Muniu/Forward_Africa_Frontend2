@@ -162,7 +162,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Set new token in cookie
     const cookieOptions = [
       'Path=/',
-      'HttpOnly',
       'SameSite=Strict',
       `Max-Age=${tokenExpiryMs / 1000}`,
       process.env.NODE_ENV === 'production' ? 'Secure' : ''
