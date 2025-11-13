@@ -59,22 +59,34 @@ const getTokenFromCookie = (): string | null => {
   if (typeof document === 'undefined') return null;
 
   try {
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
+    const cookies = document.cookie;
+    console.log('🍪 Raw document.cookie:', cookies);
+
+    const cookieArray = cookies.split(';');
+    console.log('🍪 Cookies count:', cookieArray.length);
+
+    for (const cookie of cookieArray) {
       const trimmed = cookie.trim();
+      console.log('🍪 Checking cookie:', trimmed.substring(0, 30) + '...');
+
       if (trimmed.startsWith('auth_token=')) {
         const value = trimmed.substring('auth_token='.length);
+        console.log('🍪 Found auth_token, length:', value.length);
+
         if (value) {
           try {
             return decodeURIComponent(value);
           } catch (e) {
+            console.log('🍪 Could not decode, returning raw value');
             return value;
           }
         }
       }
     }
+
+    console.log('🍪 auth_token cookie NOT found in', cookieArray.length, 'cookies');
   } catch (error) {
-    console.error('Error reading cookie:', error);
+    console.error('❌ Error reading cookie:', error);
   }
   return null;
 };
