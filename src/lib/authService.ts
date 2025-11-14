@@ -194,17 +194,30 @@ export const authService = {
   getUserFromToken(): AuthUser | null {
     // Use cookies only for token retrieval
     const token = this.getTokenFromCookie();
-    if (!token) return null;
+    if (!token) {
+      console.log('🔍 AuthService: No token in cookie');
+      return null;
+    }
 
     try {
+      console.log('🔍 AuthService: Parsing token from cookie...');
       const payload = jwtUtils.parseToken(token);
+      console.log('🔍 AuthService: Token parsed successfully:', payload);
+
       // Check expiration
       if (jwtUtils.isTokenExpired(token)) {
+        console.log('⏳ AuthService: Token is expired');
         return null;
       }
 
+      // Validate required fields
+      if (!payload.userId || !payload.email) {
+        console.error('❌ AuthService: Token missing required fields. Payload:', payload);
+        throw new AuthError('INVALID_TOKEN', 'Token missing required fields (userId or email)');
+      }
+
       // Convert token payload to AuthUser format
-      return {
+      const user: AuthUser = {
         id: payload.userId,
         email: payload.email,
         full_name: payload.displayName || '',
@@ -215,7 +228,11 @@ export const authService = {
         avatar_url: payload.photoURL || undefined,
         onboarding_completed: payload.onboarding_completed || false
       };
+
+      console.log('✅ AuthService: User extracted from token:', user);
+      return user;
     } catch (error) {
+      console.error('❌ AuthService: Error decoding user from token:', error);
       return null;
     }
   },
