@@ -252,16 +252,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
     const isProduction = process.env.NODE_ENV === 'production';
 
-    const cookieParts = [
-      `auth_token=${encodeURIComponent(jwtToken)}`,
+    const cookieString = [
+      `auth_token=${jwtToken}`,
       'Path=/',
       'SameSite=Lax', // Lax allows same-site requests and navigation, safer than Strict for this use case
       `Max-Age=${maxAge}`, // Ensures cookie persists after page refresh
       isProduction ? 'Secure' : '' // Secure only in production (HTTPS required)
       // NOTE: Omitting HttpOnly flag allows JavaScript to read this cookie via document.cookie
-    ].filter(Boolean);
+    ].filter(Boolean).join('; ');
 
-    res.setHeader('Set-Cookie', cookieParts.join('; '));
+    res.setHeader('Set-Cookie', cookieString);
 
     rateLimit.recordAttempt(email, true);
 
