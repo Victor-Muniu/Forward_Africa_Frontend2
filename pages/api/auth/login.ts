@@ -248,16 +248,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Set JWT token in cookie (accessible to JavaScript)
-    // Configuration: NO HttpOnly flag (allows JS to read), sameSite=Lax, secure based on environment, maxAge for persistence
+    // Configuration: NO HttpOnly flag (allows JS to read), sameSite=Lax, secure based on protocol, maxAge for persistence
     const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
-    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Check if request is HTTPS (set Secure flag if so)
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' ||
+                    req.headers['x-proto'] === 'https' ||
+                    req.connection.encrypted ||
+                    process.env.NODE_ENV === 'production';
 
     const cookieString = [
       `auth_token=${jwtToken}`,
       'Path=/',
       'SameSite=Lax', // Lax allows same-site requests and navigation, safer than Strict for this use case
       `Max-Age=${maxAge}`, // Ensures cookie persists after page refresh
-      isProduction ? 'Secure' : '' // Secure only in production (HTTPS required)
+      isHttps ? 'Secure' : '' // Secure flag required for HTTPS (fly.dev, production, etc.)
       // NOTE: Omitting HttpOnly flag allows JavaScript to read this cookie via document.cookie
     ].filter(Boolean).join('; ');
 
