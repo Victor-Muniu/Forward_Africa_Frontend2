@@ -16,7 +16,7 @@ interface AuthContextType {
   updateProfile: (profileData: Partial<AuthUser>) => Promise<AuthUser>;
   refreshToken: () => Promise<void>;
   clearError: () => void;
-  checkAuthStatus: () => Promise<void>;
+  checkAuthStatus: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,247 +40,137 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   
-  // Track redirects to prevent infinite redirect loops
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRedirectingRef = useRef(false);
-  const authCheckInProgressRef = useRef(false);
 
-  // Check authentication status
-  const checkAuthStatus = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    if (authCheckInProgressRef.current) return; // Prevent concurrent checks
-
-    authCheckInProgressRef.current = true;
-
+  // Initialize user from JWT token in cookies (no API calls)
+  const initializeUserFromToken = useCallback(() => {
     try {
-      console.log('🔍 AuthContext: Checking authentication status...');
-
-      // First, check if there's a token in the cookie
+      console.log('🔍 AuthContext: Initializing user from JWT token...');
+      
       const token = authService.getTokenFromCookie();
       if (!token) {
         console.log('🔍 AuthContext: No token in cookie');
         setUser(null);
-        setLoading(false);
         return;
       }
 
-      // Check if token is expired BEFORE doing anything else
-      const tokenStatus = authService.getTokenStatus();
-      if (tokenStatus.isExpired) {
-        console.log('⏳ AuthContext: Token is expired, attempting refresh...');
-        try {
-          await authService.refreshToken();
-          console.log('✅ AuthContext: Token refreshed successfully');
-          // After refresh, try again to decode the new token
-          const newToken = authService.getTokenFromCookie();
-          if (newToken) {
-            const userFromToken = authService.getUserFromToken();
-            if (userFromToken) {
-              setUser(userFromToken);
-              setError(null);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (refreshError) {
-          console.error('❌ AuthContext: Token refresh failed:', refreshError);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+      // Check if token is expired
+      if (authService.getTokenStatus().isExpired) {
+        console.log('⏳ AuthContext: Token is expired');
+        setUser(null);
+        return;
       }
 
-      console.log('✅ AuthContext: Token is valid, decoding user data from token...');
-
-      // Decode user data directly from token - no API call needed
+      // Decode user from token
       const userFromToken = authService.getUserFromToken();
       if (userFromToken) {
         console.log('✅ AuthContext: User loaded from token:', userFromToken.email);
         setUser(userFromToken);
-        setError(null);
       } else {
         console.log('❌ AuthContext: Could not decode user from token');
         setUser(null);
       }
     } catch (error) {
-      console.error('❌ AuthContext: Auth check error:', error);
+      console.error('❌ AuthContext: Error initializing from token:', error);
       setUser(null);
-      setError('Authentication check failed');
-    } finally {
-      authCheckInProgressRef.current = false;
-      setLoading(false);
     }
   }, []);
 
-  // Refresh token
-  const refreshToken = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      console.log('🔄 AuthContext: Refreshing token...');
-
-      const response = await authService.refreshToken();
-
-      if (response.user) {
-        setUser(response.user);
-        setError(null);
-        console.log('✅ AuthContext: Token refreshed successfully');
-        return;
-      }
-
-      console.error('❌ AuthContext: Token refresh returned no user data');
-      setUser(null);
-      setError('Session expired. Please log in again.');
-    } catch (error) {
-      console.error('❌ AuthContext: Token refresh failed:', error);
-      // Clear user and show error for auth failures
-      setUser(null);
-
-      if (error instanceof Error) {
-        if (error.message.includes('Session expired') || error.message.includes('Unauthorized') || error.message.includes('401')) {
-          setError('Session expired. Please log in again.');
-        } else {
-          console.warn('⚠️ Token refresh failed with error:', error.message);
-          // For other errors, still show expired message as fallback
-          setError('Session expired. Please log in again.');
-        }
-      }
-    }
-  }, []);
-
-  // Clear error
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  // Set client flag
+  // Set client flag and initialize on mount
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Check authentication on mount only
+  // Check authentication on mount (synchronous, just decode token)
   useEffect(() => {
     if (!isClient) return;
+    
+    initializeUserFromToken();
+    setLoading(false);
+  }, [isClient, initializeUserFromToken]);
 
-    checkAuthStatus().finally(() => {
-      setLoading(false);
-    });
-  }, [checkAuthStatus, isClient]);
-
-  // Single consolidated effect for token management and redirects
+  // Auto-refresh token before expiry
   useEffect(() => {
-    if (!isClient || loading) return;
+    if (!isClient || loading || !user) return;
 
-    let tokenCheckInterval: NodeJS.Timeout | null = null;
-    let lastRefreshAttempt = 0;
+    let tokenRefreshInterval: NodeJS.Timeout | null = null;
 
-    const performTokenCheck = () => {
-      // Skip token check if we're in the middle of a redirect (e.g., from login)
-      if (isRedirectingRef.current) {
-        console.log('⏳ Skipping token check - redirect in progress');
-        return;
-      }
+    const scheduleTokenRefresh = () => {
+      const expiry = authService.getTokenExpiryMs();
+      if (!expiry) return;
 
-      const status = authService.getTokenStatus();
+      const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiry
+      const timeUntilExpiry = Math.max(0, expiry - Date.now());
+      const timeUntilRefresh = timeUntilExpiry - TOKEN_REFRESH_THRESHOLD;
 
-      if (status.isExpired) {
-        console.log('⏳ Token expired, logging out');
-        setUser(null);
-
-        // Clear any pending redirects
-        if (redirectTimeoutRef.current) {
-          clearTimeout(redirectTimeoutRef.current);
-        }
-
-        // Redirect to login with a small delay to ensure state is updated
-        if (!isRedirectingRef.current) {
-          isRedirectingRef.current = true;
-          redirectTimeoutRef.current = setTimeout(() => {
-            // Redirect directly to login without query params to prevent loops
-            router.replace('/login');
-            isRedirectingRef.current = false;
-          }, 100);
-        }
-      } else if (status.isValid && authService.shouldRefreshToken()) {
-        // Prevent rapid refresh attempts (debounce refresh to every 30 seconds minimum)
-        const now = Date.now();
-        if (now - lastRefreshAttempt >= 30 * 1000) {
-          console.log('🔄 Token expiring soon, refreshing...');
-          lastRefreshAttempt = now;
-          refreshToken().catch((error) => {
-            console.error('❌ Failed to refresh token:', error);
-          });
-        }
+      if (timeUntilRefresh > 0) {
+        console.log(`🔄 Scheduling token refresh in ${Math.floor(timeUntilRefresh / 1000)}s`);
+        
+        if (tokenRefreshInterval) clearTimeout(tokenRefreshInterval);
+        
+        tokenRefreshInterval = setTimeout(async () => {
+          console.log('🔄 Auto-refreshing token...');
+          try {
+            const response = await authService.refreshToken();
+            if (response.user) {
+              // Re-decode user from new token
+              const newUser = authService.getUserFromToken();
+              if (newUser) {
+                setUser(newUser);
+                console.log('✅ Token refreshed and user updated');
+                scheduleTokenRefresh();
+              }
+            }
+          } catch (error) {
+            console.error('❌ Token refresh failed:', error);
+            setUser(null);
+          }
+        }, timeUntilRefresh);
       }
     };
 
-    // Run token check immediately to catch expiration on page load (but not during redirect)
-    if (!isRedirectingRef.current) {
-      console.log('🔍 AuthContext: Running immediate token check...');
-      performTokenCheck();
-    }
-
-    // Check token every 30 seconds (more frequently to catch expirations sooner)
-    tokenCheckInterval = setInterval(performTokenCheck, 30 * 1000);
-
-    // Also check on page visibility change
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('📱 Page became visible, checking token...');
-        performTokenCheck();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    scheduleTokenRefresh();
 
     return () => {
-      if (tokenCheckInterval) clearInterval(tokenCheckInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (tokenRefreshInterval) clearTimeout(tokenRefreshInterval);
     };
-  }, [isClient, loading, refreshToken, router]);
+  }, [isClient, loading, user]);
 
-  // Redirect unauthenticated users from protected pages - only when user state changes
+  // Redirect unauthenticated users from protected pages
   useEffect(() => {
     if (!isClient || loading) return;
 
-    if (!user) {
+    // If no user and not already redirecting
+    if (!user && !isRedirectingRef.current) {
       const currentPath = router.pathname;
       const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
       const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
 
-      // Only redirect if user is on a protected page and not already redirecting
-      if (!isPublicPath && !isRedirectingRef.current) {
-        console.log('🚪 AuthContext: Redirecting unauthenticated user from protected page:', currentPath);
+      if (!isPublicPath) {
+        console.log('🚪 Redirecting to login from:', currentPath);
         isRedirectingRef.current = true;
 
-        // Clear any pending redirects
-        if (redirectTimeoutRef.current) {
-          clearTimeout(redirectTimeoutRef.current);
-        }
+        if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
 
-        // Don't add redirect query param to prevent loops
-        // Just redirect directly to login
         redirectTimeoutRef.current = setTimeout(() => {
-          console.log('�� Performing redirect to login');
           router.replace('/login');
           isRedirectingRef.current = false;
         }, 100);
       }
-    } else {
-      // User is authenticated, clear redirect flag
+    } else if (user) {
+      // User is authenticated, clear any pending redirects
       isRedirectingRef.current = false;
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
       }
     }
 
     return () => {
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current);
-      }
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
   }, [user, loading, isClient, router]);
-
 
   const signIn = async (credentials: LoginCredentials): Promise<void> => {
     try {
@@ -289,25 +179,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔐 AuthContext: Signing in...');
 
       const response = await authService.login(credentials);
-      setUser(response.user);
-      console.log('✅ AuthContext: Sign in successful, user:', response.user);
-
-      // Set a flag to prevent immediate token checks from interfering with redirect
-      isRedirectingRef.current = true;
-
-      // Redirect to home after successful login
-      console.log('📍 Redirecting to: /home');
-      await router.replace('/home');
-
-      // Clear the redirecting flag after navigation completes
-      setTimeout(() => {
-        isRedirectingRef.current = false;
-      }, 500);
+      
+      // Token is now in cookies from server
+      // Decode and set user immediately
+      const userFromToken = authService.getUserFromToken();
+      if (userFromToken) {
+        setUser(userFromToken);
+        console.log('✅ User signed in:', userFromToken.email);
+        
+        // Set redirect flag to prevent interference
+        isRedirectingRef.current = true;
+        await router.replace('/home');
+        setTimeout(() => {
+          isRedirectingRef.current = false;
+        }, 500);
+      } else {
+        throw new AuthError('LOGIN_FAILED', 'Failed to decode user token');
+      }
     } catch (error) {
-      console.error('❌ AuthContext: Sign in error:', error);
+      console.error('❌ Sign in error:', error);
 
       let errorMessage = 'Sign in failed';
-
       if (error instanceof AuthError) {
         switch (error.code) {
           case 'INVALID_CREDENTIALS':
@@ -343,16 +235,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('📝 AuthContext: Signing up...');
 
       const response = await authService.register(data);
-      setUser(response.user);
-      console.log('✅ AuthContext: Sign up successful');
-
-      // Don't auto-redirect - let the page that called signUp decide where to redirect
-      // Usually the page will handle the redirect or let the user proceed naturally
+      
+      // Token is now in cookies from server
+      // Decode and set user immediately
+      const userFromToken = authService.getUserFromToken();
+      if (userFromToken) {
+        setUser(userFromToken);
+        console.log('✅ User signed up:', userFromToken.email);
+      }
     } catch (error) {
-      console.error('❌ AuthContext: Sign up error:', error);
+      console.error('❌ Sign up error:', error);
 
       let errorMessage = 'Sign up failed';
-
       if (error instanceof AuthError) {
         switch (error.code) {
           case 'EMAIL_EXISTS':
@@ -385,23 +279,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.logout();
       setUser(null);
       setError(null);
-      console.log('✅ AuthContext: Sign out successful');
+      console.log('✅ Sign out successful');
       router.push('/');
     } catch (error) {
-      console.error('❌ AuthContext: Sign out error:', error);
-      // Clear local state even if logout fails
+      console.error('❌ Sign out error:', error);
       setUser(null);
       setError(null);
       router.push('/');
     }
   };
 
+  const refreshToken = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      console.log('🔄 AuthContext: Refreshing token...');
+      const response = await authService.refreshToken();
+
+      if (response) {
+        // Decode new token
+        const newUser = authService.getUserFromToken();
+        if (newUser) {
+          setUser(newUser);
+          setError(null);
+          console.log('✅ Token refreshed');
+          return;
+        }
+      }
+
+      console.error('❌ Token refresh failed - no user data');
+      setUser(null);
+      setError('Session expired. Please log in again.');
+    } catch (error) {
+      console.error('❌ Token refresh error:', error);
+      setUser(null);
+      setError('Session expired. Please log in again.');
+    }
+  }, []);
+
   const updateProfile = async (profileData: Partial<AuthUser>) => {
     try {
       setError(null);
       console.log('🔄 AuthContext: Updating profile...');
 
-      // Make authenticated request to update profile
       const response = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -415,15 +335,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const updatedUser: AuthUser = await response.json();
       setUser(updatedUser);
-      console.log('✅ AuthContext: Profile updated');
-
+      console.log('✅ Profile updated');
       return updatedUser;
     } catch (error) {
-      console.error('❌ AuthContext: Profile update error:', error);
+      console.error('❌ Profile update error:', error);
       setError('Failed to update profile');
       throw error;
     }
   };
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   const value = {
     user,
@@ -439,7 +362,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     refreshToken,
     clearError,
-    checkAuthStatus
+    checkAuthStatus: initializeUserFromToken
   };
 
   return (
