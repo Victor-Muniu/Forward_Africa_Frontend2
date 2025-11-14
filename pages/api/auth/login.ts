@@ -81,7 +81,7 @@ class JWTManager {
   static generateSignature(message: string): string {
     const crypto = require('crypto');
     return crypto
-      .createHmac('sha256', this.JWT_SECRET)
+      .createHmac('sha256', this.getJWTSecret())
       .update(message)
       .digest('base64')
       .replace(/\+/g, '-')
@@ -92,7 +92,8 @@ class JWTManager {
   static createToken(payload: any): string {
     const header = { alg: 'HS256', typ: 'JWT' };
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + this.JWT_EXPIRES_IN;
+    const expiresIn = this.getJWTExpiresIn();
+    const exp = iat + expiresIn;
 
     const tokenPayload = { ...payload, iat, exp };
 
