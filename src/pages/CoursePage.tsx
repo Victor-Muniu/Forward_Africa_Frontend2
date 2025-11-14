@@ -47,9 +47,11 @@ const CoursePage: React.FC = () => {
     setIsClient(true);
   }, []);
 
-  // Check token synchronously on mount - redirect immediately if no valid token
+  // Check token on mount - redirect immediately if no valid token in cookie
   useEffect(() => {
-    if (!hasValidToken()) {
+    const isTokenValid = validateTokenInCookie();
+    if (!isTokenValid) {
+      console.log('No valid token, redirecting to login');
       router.replace('/login');
       return;
     }
