@@ -150,7 +150,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!isRedirectingRef.current) {
           isRedirectingRef.current = true;
           redirectTimeoutRef.current = setTimeout(() => {
-            router.push({ pathname: '/login', query: { redirect: router.pathname } });
+            // Redirect directly to login without query params to prevent loops
+            router.replace('/login');
             isRedirectingRef.current = false;
           }, 100);
         }
