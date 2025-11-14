@@ -29,10 +29,8 @@ const clearLocalStorage = () => {
     // Show success message
     alert('Local storage cleared successfully!');
 
-    // Optionally reload the page to ensure clean state
-    if (confirm('Would you like to reload the page to ensure a clean state?')) {
-      window.location.reload();
-    }
+    // Clear local storage action completed
+    alert('Local storage cleared successfully');
   } catch (error) {
     DEBUG.error('❌ Error clearing local storage', error);
     alert('Error clearing local storage: ' + (error instanceof Error ? error.message : 'Unknown error'));

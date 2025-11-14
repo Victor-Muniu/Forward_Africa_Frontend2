@@ -153,7 +153,7 @@ const EnhancedSearchPage: React.FC = () => {
   // Handle course selection from recommendations
   const handleCourseSelect = (course: Course) => {
     // Navigate to course page
-    window.location.href = `/course/${course.id}`;
+    router.push(`/course/${course.id}`);
   };
 
   // Group results by type
