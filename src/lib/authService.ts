@@ -115,9 +115,19 @@ const jwtUtils = {
   isTokenExpired(token: string): boolean {
     try {
       const payload = jwtUtils.parseToken(token);
+      if (!payload.exp) {
+        console.warn('⚠️ Token missing exp claim');
+        return true;
+      }
       const currentTime = Math.floor(Date.now() / 1000);
-      return payload.exp < currentTime;
+      const isExpired = payload.exp < currentTime;
+      if (!isExpired) {
+        const timeLeft = payload.exp - currentTime;
+        console.debug(`✅ Token valid, expires in ${timeLeft}s`);
+      }
+      return isExpired;
     } catch (error) {
+      console.error('⚠️ Token parsing error in isTokenExpired:', error);
       return true;
     }
   },
