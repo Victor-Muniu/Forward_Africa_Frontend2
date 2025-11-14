@@ -90,8 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('❌ AuthContext: Failed to fetch profile:', error);
 
-        // If 401, try refreshing token once and retry
-        if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
+        // If 401 (UNAUTHORIZED), try refreshing token once and retry
+        if (error instanceof AuthError && error.code === 'UNAUTHORIZED') {
           console.log('🔄 AuthContext: Got 401, attempting token refresh and retry...');
           try {
             await authService.refreshToken();
