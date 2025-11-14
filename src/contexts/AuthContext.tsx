@@ -48,30 +48,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔍 AuthContext: Checking authentication status...');
 
-      if (!authService.hasValidToken()) {
-        console.log('🔍 AuthContext: No valid token found');
+      // First, check if there's a token in the cookie
+      const token = authService.getTokenFromCookie();
+      if (!token) {
+        console.log('🔍 AuthContext: No token in cookie');
         setUser(null);
+        setLoading(false);
         return;
       }
 
-      // Try to get user from token first
-      const tokenUser = authService.getUserFromToken();
-      if (tokenUser) {
-        console.log('✅ AuthContext: User loaded from token:', tokenUser.email);
-        setUser(tokenUser);
+      console.log('✅ AuthContext: Token found in cookie, fetching user profile...');
+
+      // Fetch user profile from server
+      try {
+        const profileUser = await authService.getProfile();
+        console.log('✅ AuthContext: User profile loaded:', profileUser.email);
+        setUser(profileUser);
         setError(null);
-        return;
+      } catch (error) {
+        console.error('❌ AuthContext: Failed to fetch profile:', error);
+        // Token might be invalid or expired, clear it
+        setUser(null);
       }
-
-      // If no user from token, fetch from server
-      const profileUser = await authService.getProfile();
-      console.log('✅ AuthContext: User profile loaded:', profileUser.email);
-      setUser(profileUser);
-      setError(null);
     } catch (error) {
       console.error('❌ AuthContext: Auth check error:', error);
       setUser(null);
       setError('Authentication check failed');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
