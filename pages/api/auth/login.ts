@@ -52,8 +52,23 @@ const verifyPasswordWithFirebase = async (email: string, password: string, apiKe
 
 // JWT utilities
 class JWTManager {
-  private static JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
-  private static JWT_EXPIRES_IN = Number(process.env.JWT_EXPIRES_IN) || 3600; // 1 hour
+  private static getJWTSecret(): string {
+    return process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+  }
+
+  private static getJWTExpiresIn(): number {
+    const expiresIn = process.env.JWT_EXPIRES_IN;
+    if (!expiresIn) {
+      console.warn('⚠️ JWT_EXPIRES_IN not set, using default 3600s');
+      return 3600;
+    }
+    const parsed = Number(expiresIn);
+    if (isNaN(parsed)) {
+      console.error('❌ JWT_EXPIRES_IN is not a valid number:', expiresIn);
+      return 3600;
+    }
+    return parsed;
+  }
 
   static base64UrlEncode(str: string): string {
     return Buffer.from(str)
