@@ -64,7 +64,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log('✅ AuthContext: Token found in cookie, fetching user profile...');
+      // Check if token is expired BEFORE making any API calls
+      const tokenStatus = authService.getTokenStatus();
+      if (tokenStatus.isExpired) {
+        console.log('⏳ AuthContext: Token is expired, attempting refresh...');
+        try {
+          await authService.refreshToken();
+          console.log('✅ AuthContext: Token refreshed successfully');
+        } catch (refreshError) {
+          console.error('❌ AuthContext: Token refresh failed:', refreshError);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      console.log('✅ AuthContext: Token is valid, fetching user profile...');
 
       // Fetch user profile from server
       try {
@@ -74,8 +89,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(null);
       } catch (error) {
         console.error('❌ AuthContext: Failed to fetch profile:', error);
-        // Token might be invalid or expired, clear it
-        setUser(null);
+
+        // If 401, try refreshing token once and retry
+        if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
+          console.log('🔄 AuthContext: Got 401, attempting token refresh and retry...');
+          try {
+            await authService.refreshToken();
+            const retryUser = await authService.getProfile();
+            console.log('✅ AuthContext: Profile loaded after token refresh:', retryUser.email);
+            setUser(retryUser);
+            setError(null);
+          } catch (retryError) {
+            console.error('❌ AuthContext: Retry failed after token refresh:', retryError);
+            setUser(null);
+          }
+        } else {
+          // Token might be invalid, clear it
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('❌ AuthContext: Auth check error:', error);
