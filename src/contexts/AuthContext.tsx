@@ -180,17 +180,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await authService.login(credentials);
       setUser(response.user);
-      console.log('✅ AuthContext: Sign in successful');
+      console.log('✅ AuthContext: Sign in successful, user:', response.user);
 
-      // Redirect to the page user came from, or home if none specified
-      setTimeout(() => {
-        const redirectPath = router.query.redirect as string;
-        if (redirectPath && !['/login', '/register'].includes(redirectPath)) {
-          router.push(redirectPath);
-        } else {
-          router.push('/home');
-        }
-      }, 100);
+      // Redirect to home immediately - don't use setTimeout
+      // Browser will automatically send cookie with the request
+      const redirectPath = router.query.redirect as string;
+      if (redirectPath && !['/login', '/register'].includes(redirectPath)) {
+        console.log('📍 Redirecting to:', redirectPath);
+        router.replace(redirectPath);
+      } else {
+        console.log('📍 Redirecting to: /home');
+        router.replace('/home');
+      }
     } catch (error) {
       console.error('❌ AuthContext: Sign in error:', error);
 
