@@ -44,25 +44,12 @@ const CoursePage: React.FC = () => {
   // Set client flag on mount to prevent hydration issues
   useEffect(() => {
     setIsClient(true);
+    setHasCheckedToken(true);
   }, []);
 
-  // Check token on mount - redirect immediately if no valid token in cookie
-  useEffect(() => {
-    const isTokenValid = validateTokenInCookie();
-    if (!isTokenValid) {
-      console.log('No valid token, redirecting to login');
-      router.replace('/login');
-      return;
-    }
-    setHasCheckedToken(true);
-  }, [router]);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (hasCheckedToken && !authLoading && !isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, authLoading, router, hasCheckedToken]);
+  // NOTE: Removed manual token redirect checks
+  // AuthContext now handles all authentication redirects
+  // No need to check token here - ProtectedRoute or AuthContext will handle it
 
   // Scroll to top on component mount
   useEffect(() => {
