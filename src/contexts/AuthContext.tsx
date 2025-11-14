@@ -95,17 +95,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔄 AuthContext: Refreshing token...');
 
       const response = await authService.refreshToken();
-      
+
       if (response.user) {
         setUser(response.user);
         setError(null);
+        console.log('✅ AuthContext: Token refreshed successfully');
+        return;
       }
 
-      console.log('✅ AuthContext: Token refreshed successfully');
-    } catch (error) {
-      console.error('❌ AuthContext: Token refresh failed:', error);
+      console.error('❌ AuthContext: Token refresh returned no user data');
       setUser(null);
       setError('Session expired. Please log in again.');
+    } catch (error) {
+      console.error('❌ AuthContext: Token refresh failed:', error);
+      // Only log out if it's an auth error, not a network error
+      if (error instanceof Error && error.message.includes('Session expired')) {
+        setUser(null);
+        setError('Session expired. Please log in again.');
+      } else {
+        console.warn('⚠️ Token refresh failed but not logging out (might be network error):', error);
+        // Keep user logged in and retry next time
+      }
     }
   }, []);
 
