@@ -248,14 +248,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Set JWT token in cookie (accessible to JavaScript)
-    const cookieOptions = [
-      'Path=/',
-      'SameSite=Strict',
-      `Max-Age=${tokenExpiryMs / 1000}`, // Convert ms to seconds
-      process.env.NODE_ENV === 'production' ? 'Secure' : ''
-    ].filter(Boolean).join('; ');
+    // Configuration: httpOnly=false (JS can read), sameSite=Lax, secure based on environment, maxAge for persistence
+    const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
+    const cookieParts = [
+      `auth_token=${encodeURIComponent(jwtToken)}`,
+      'Path=/',
+      'SameSite=Lax', // Lax is more flexible for same-domain, blocks some cross-site requests but allows navigation
+      `Max-Age=${maxAge}`,
+      isProduction ? 'Secure' : '', // Secure only in production (HTTPS)
+      'HttpOnly=false' // Explicitly allow JavaScript to read the cookie
+    ].filter(Boolean);
+
+    res.setHeader('Set-Cookie', cookieParts.join('; '));
 
     rateLimit.recordAttempt(email, true);
 
