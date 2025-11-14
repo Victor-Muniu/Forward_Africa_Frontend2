@@ -4,6 +4,7 @@ import { Play, Clock, ChevronLeft, ChevronRight, BookOpen, CheckCircle, Trash2 }
 import VideoPlayer from '../../../../src/components/ui/VideoPlayer';
 import { Course, Lesson } from '../../../../src/types';
 import { useAuth } from '../../../../src/contexts/AuthContext';
+import { validateTokenInCookie } from '../../../../src/lib/validateToken';
 
 // Debug utility
 const DEBUG = {
