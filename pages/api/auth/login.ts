@@ -248,21 +248,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Set JWT token in cookie (accessible to JavaScript)
-    // Configuration: NO HttpOnly flag (allows JS to read), sameSite=Lax, Secure (ALWAYS for persistence), maxAge for persistence
+    // Configuration: NO HttpOnly flag (allows JS to read), sameSite=Lax, Secure, Domain for subdomain compatibility
     const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
 
-    // ALWAYS set Secure flag - it's required for cookies to persist on refresh in any HTTPS environment
-    // (fly.dev, Vercel, localhost with HTTPS, etc.)
-    // Note: In development, if you're on localhost without HTTPS, the browser may ignore the Secure flag
+    // Get current domain from request
+    const host = req.headers.host || 'localhost';
+    // Remove port for domain (e.g., localhost:3000 -> localhost)
+    const domain = host.split(':')[0];
+    const isDevelopment = domain === 'localhost' || domain.includes('127.0.0.1');
+
+    console.log(`🔐 Setting cookie for domain: ${domain}, isDevelopment: ${isDevelopment}`);
+
     const cookieString = [
       `auth_token=${jwtToken}`,
       'Path=/',
+      isDevelopment ? '' : `Domain=${domain}`, // Only set Domain in production (fly.dev, etc.)
       'SameSite=Lax', // Lax allows same-site requests and navigation
       `Max-Age=${maxAge}`, // Ensures cookie persists after page refresh (1 hour)
-      'Secure' // CRITICAL: Required for cookies to persist on page refresh in HTTPS environments
+      isDevelopment ? '' : 'Secure' // Secure flag required for HTTPS (production domains)
       // NOTE: Omitting HttpOnly flag allows JavaScript to read this cookie via document.cookie
-    ].join('; ');
+    ].filter(Boolean).join('; ');
 
+    console.log(`🔐 Set-Cookie header: ${cookieString.substring(0, 100)}...`);
     res.setHeader('Set-Cookie', cookieString);
 
     rateLimit.recordAttempt(email, true);
