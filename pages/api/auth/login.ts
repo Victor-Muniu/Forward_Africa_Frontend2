@@ -248,14 +248,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Set JWT token in cookie (accessible to JavaScript)
-    const cookieOptions = [
-      'Path=/',
-      'SameSite=Strict',
-      `Max-Age=${tokenExpiryMs / 1000}`, // Convert ms to seconds
-      process.env.NODE_ENV === 'production' ? 'Secure' : ''
-    ].filter(Boolean).join('; ');
+    // Critical: DO NOT set Domain attribute - let browser use current domain only
+    // This ensures document.cookie can access the token
+    const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
+    const isProduction = process.env.NODE_ENV === 'production' ||
+                         req.headers.host?.includes('fly.dev') ||
+                         req.headers['x-forwarded-proto'] === 'https';
 
-    res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
+    const cookieString = [
+      `auth_token=${jwtToken}`,
+      "Path=/",
+      // When in production OR inside Builder.io iframe → must use None; Secure
+      isProduction ? "SameSite=None" : "SameSite=Lax",
+      isProduction ? "Secure" : "",
+      `Max-Age=${maxAge}`
+    ].filter(Boolean).join("; ");
+
+    console.log(`🔐 Login: Setting auth_token cookie (max-age: ${maxAge}s, secure: ${isProduction})`);
+    res.setHeader('Set-Cookie', cookieString);
 
     rateLimit.recordAttempt(email, true);
 

@@ -159,15 +159,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const newToken = JWTManager.createToken(tokenPayload);
     const tokenExpiryMs = JWTManager.getTokenExpiry();
 
-    // Set new token in cookie
-    const cookieOptions = [
+    // Set new token in cookie (match login endpoint configuration)
+    const maxAge = Math.floor(tokenExpiryMs / 1000);
+    const isProduction = process.env.NODE_ENV === 'production' ||
+                         req.headers.host?.includes('fly.dev') ||
+                         req.headers['x-forwarded-proto'] === 'https';
+
+    const cookieString = [
+      `auth_token=${newToken}`,
       'Path=/',
-      'SameSite=Strict',
-      `Max-Age=${tokenExpiryMs / 1000}`,
-      process.env.NODE_ENV === 'production' ? 'Secure' : ''
+      'SameSite=Lax',
+      `Max-Age=${maxAge}`,
+      isProduction ? 'Secure' : ''
+      // CRITICAL: Omitting Domain and HttpOnly - Domain prevents JS access, HttpOnly blocks reading
     ].filter(Boolean).join('; ');
 
-    res.setHeader('Set-Cookie', `auth_token=${newToken}; ${cookieOptions}`);
+    res.setHeader('Set-Cookie', cookieString);
 
     const responseUser = {
       id: userRecord.uid,

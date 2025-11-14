@@ -147,23 +147,51 @@ export const authService = {
 
   // Get token from cookie
   getTokenFromCookie(): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+      console.log('🔍 AuthService: getTokenFromCookie - document is undefined (SSR)');
+      return null;
+    }
 
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith('auth_token=')) {
-        const value = trimmed.substring('auth_token='.length);
-        if (value) {
-          try {
-            return decodeURIComponent(value);
-          } catch (e) {
-            return value;
+    try {
+      const cookies = document.cookie;
+      console.log('🔍 AuthService: getTokenFromCookie - reading document.cookie');
+
+      if (!cookies) {
+        console.log('🔍 AuthService: getTokenFromCookie - no cookies found');
+        return null;
+      }
+
+      const cookieArray = cookies.split(';');
+      console.log(`🔍 AuthService: getTokenFromCookie - found ${cookieArray.length} cookies`);
+
+      for (const cookie of cookieArray) {
+        const trimmed = cookie.trim();
+        console.log(`🔍 AuthService: checking cookie: "${trimmed.substring(0, 30)}..."`);
+
+        if (trimmed.startsWith('auth_token=')) {
+          const value = trimmed.substring('auth_token='.length);
+          console.log(`✅ AuthService: Found auth_token, length: ${value.length}`);
+
+          if (value) {
+            try {
+              // Try to decode, but fall back to raw value if it fails
+              const decoded = decodeURIComponent(value);
+              console.log('✅ AuthService: Token decoded successfully');
+              return decoded;
+            } catch (decodeError) {
+              console.warn('⚠️ AuthService: decodeURIComponent failed, using raw value:', decodeError);
+              return value; // Return raw value if decoding fails
+            }
           }
         }
       }
+
+      console.log('🔍 AuthService: auth_token cookie not found');
+      return null;
+    } catch (error) {
+      console.error('❌ AuthService: Error reading cookies:', error);
+      return null;
     }
-    return null;
   },
 
   // Get token from localStorage (deprecated - use cookies only)
@@ -194,17 +222,30 @@ export const authService = {
   getUserFromToken(): AuthUser | null {
     // Use cookies only for token retrieval
     const token = this.getTokenFromCookie();
-    if (!token) return null;
+    if (!token) {
+      console.log('🔍 AuthService: No token in cookie');
+      return null;
+    }
 
     try {
+      console.log('🔍 AuthService: Parsing token from cookie...');
       const payload = jwtUtils.parseToken(token);
+      console.log('🔍 AuthService: Token parsed successfully:', payload);
+
       // Check expiration
       if (jwtUtils.isTokenExpired(token)) {
+        console.log('⏳ AuthService: Token is expired');
         return null;
       }
 
+      // Validate required fields
+      if (!payload.userId || !payload.email) {
+        console.error('❌ AuthService: Token missing required fields. Payload:', payload);
+        throw new AuthError('INVALID_TOKEN', 'Token missing required fields (userId or email)');
+      }
+
       // Convert token payload to AuthUser format
-      return {
+      const user: AuthUser = {
         id: payload.userId,
         email: payload.email,
         full_name: payload.displayName || '',
@@ -215,7 +256,11 @@ export const authService = {
         avatar_url: payload.photoURL || undefined,
         onboarding_completed: payload.onboarding_completed || false
       };
+
+      console.log('✅ AuthService: User extracted from token:', user);
+      return user;
     } catch (error) {
+      console.error('❌ AuthService: Error decoding user from token:', error);
       return null;
     }
   },
