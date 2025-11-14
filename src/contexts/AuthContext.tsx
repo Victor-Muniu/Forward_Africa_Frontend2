@@ -186,21 +186,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (!user) {
       const currentPath = router.pathname;
-      const publicPaths = ['/', '/login', '/register'];
+      const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
       const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
 
       // Only redirect if user is on a protected page and not already redirecting
       if (!isPublicPath && !isRedirectingRef.current) {
-        console.log('🚪 AuthContext: Redirecting unauthenticated user from protected page');
+        console.log('🚪 AuthContext: Redirecting unauthenticated user from protected page:', currentPath);
         isRedirectingRef.current = true;
-        
+
         // Clear any pending redirects
         if (redirectTimeoutRef.current) {
           clearTimeout(redirectTimeoutRef.current);
         }
-        
+
+        // Don't add redirect query param to prevent loops
+        // Just redirect directly to login
         redirectTimeoutRef.current = setTimeout(() => {
-          router.push({ pathname: '/login', query: { redirect: currentPath } });
+          console.log('🚀 Performing redirect to login');
+          router.replace('/login');
           isRedirectingRef.current = false;
         }, 100);
       }
