@@ -433,19 +433,25 @@ export const authService = {
     const token = this.getToken();
 
     if (!token) {
+      console.log('ℹ️ AuthService: No token found');
       return { isValid: false, isExpired: true, timeUntilExpiry: 0 };
     }
 
     if (jwtUtils.isTokenExpired(token)) {
+      console.log('⏳ AuthService: Token is expired');
       return { isValid: false, isExpired: true, timeUntilExpiry: 0 };
     }
 
     const expiry = jwtUtils.getTokenExpiry(token);
     if (!expiry) {
+      console.warn('⚠️ AuthService: Could not determine token expiry from token');
       return { isValid: true, isExpired: false, timeUntilExpiry: null };
     }
 
     const timeUntilExpiry = Math.max(0, expiry - Date.now());
+    const timeUntilExpirySeconds = Math.floor(timeUntilExpiry / 1000);
+    console.log(`✅ AuthService: Token is valid. Expires in ${timeUntilExpirySeconds}s (${Math.floor(timeUntilExpirySeconds / 60)}m ${timeUntilExpirySeconds % 60}s)`);
+
     return { isValid: true, isExpired: false, timeUntilExpiry };
   }
 };
