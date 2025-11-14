@@ -164,15 +164,20 @@ export const authService = {
       const trimmed = cookie.trim();
       if (trimmed.startsWith('auth_token=')) {
         const value = trimmed.substring('auth_token='.length);
-        if (value) {
+        if (value && value.length > 0) {
           try {
-            return decodeURIComponent(value);
+            // Try to decode if it's URL-encoded, otherwise use as-is
+            const decoded = decodeURIComponent(value);
+            console.debug(`✅ Retrieved auth_token from cookie (${decoded.length} chars)`);
+            return decoded;
           } catch (e) {
+            console.warn('⚠️ Failed to decode auth_token, using raw value:', e);
             return value;
           }
         }
       }
     }
+    console.warn('⚠️ No auth_token cookie found');
     return null;
   },
 
