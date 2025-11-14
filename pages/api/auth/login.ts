@@ -106,7 +106,7 @@ class JWTManager {
   }
 
   static getTokenExpiry(): number {
-    return this.JWT_EXPIRES_IN * 1000; // in milliseconds
+    return this.getJWTExpiresIn() * 1000; // in milliseconds
   }
 }
 
