@@ -147,23 +147,51 @@ export const authService = {
 
   // Get token from cookie
   getTokenFromCookie(): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+      console.log('🔍 AuthService: getTokenFromCookie - document is undefined (SSR)');
+      return null;
+    }
 
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith('auth_token=')) {
-        const value = trimmed.substring('auth_token='.length);
-        if (value) {
-          try {
-            return decodeURIComponent(value);
-          } catch (e) {
-            return value;
+    try {
+      const cookies = document.cookie;
+      console.log('🔍 AuthService: getTokenFromCookie - reading document.cookie');
+
+      if (!cookies) {
+        console.log('🔍 AuthService: getTokenFromCookie - no cookies found');
+        return null;
+      }
+
+      const cookieArray = cookies.split(';');
+      console.log(`🔍 AuthService: getTokenFromCookie - found ${cookieArray.length} cookies`);
+
+      for (const cookie of cookieArray) {
+        const trimmed = cookie.trim();
+        console.log(`🔍 AuthService: checking cookie: "${trimmed.substring(0, 30)}..."`);
+
+        if (trimmed.startsWith('auth_token=')) {
+          const value = trimmed.substring('auth_token='.length);
+          console.log(`✅ AuthService: Found auth_token, length: ${value.length}`);
+
+          if (value) {
+            try {
+              // Try to decode, but fall back to raw value if it fails
+              const decoded = decodeURIComponent(value);
+              console.log('✅ AuthService: Token decoded successfully');
+              return decoded;
+            } catch (decodeError) {
+              console.warn('⚠️ AuthService: decodeURIComponent failed, using raw value:', decodeError);
+              return value; // Return raw value if decoding fails
+            }
           }
         }
       }
+
+      console.log('🔍 AuthService: auth_token cookie not found');
+      return null;
+    } catch (error) {
+      console.error('❌ AuthService: Error reading cookies:', error);
+      return null;
     }
-    return null;
   },
 
   // Get token from localStorage (deprecated - use cookies only)
