@@ -161,14 +161,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Set new token in cookie (match login endpoint configuration)
     const maxAge = Math.floor(tokenExpiryMs / 1000);
+    const isProduction = process.env.NODE_ENV === 'production' ||
+                         req.headers.host?.includes('fly.dev') ||
+                         req.headers['x-forwarded-proto'] === 'https';
+
     const cookieString = [
       `auth_token=${newToken}`,
       'Path=/',
-      'SameSite=Lax', // Match login endpoint
-      `Max-Age=${maxAge}`, // 1 hour
-      'Secure' // CRITICAL: Required for cookies to persist on page refresh in HTTPS environments
-      // NOTE: Omitting HttpOnly flag allows JavaScript to read this cookie via document.cookie
-    ].join('; ');
+      'SameSite=Lax',
+      `Max-Age=${maxAge}`,
+      isProduction ? 'Secure' : ''
+      // CRITICAL: Omitting Domain and HttpOnly - Domain prevents JS access, HttpOnly blocks reading
+    ].filter(Boolean).join('; ');
 
     res.setHeader('Set-Cookie', cookieString);
 
