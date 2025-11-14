@@ -61,38 +61,47 @@ export class AuthError extends Error {
 // JWT Token utilities for client-side verification
 const jwtUtils = {
   base64UrlDecode(str: string): string {
-    // Prepare base64url string for decoding
-    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-
-    // Add padding
-    const paddingNeeded = 4 - (base64.length % 4);
-    if (paddingNeeded && paddingNeeded !== 4) {
-      base64 += '='.repeat(paddingNeeded);
-    }
-
-    // Handle both browser and Node.js environments
-    if (typeof window !== 'undefined' && window.atob) {
-      // Browser environment
-      try {
-        const decoded = atob(base64);
-        // Handle UTF-8 properly
-        return decodeURIComponent(
-          Array.from(decoded)
-            .map(char => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-      } catch (e) {
-        console.error('Base64 decode error:', e);
-        throw e;
+    try {
+      if (!str || typeof str !== 'string') {
+        throw new Error('Invalid base64 string: not a string');
       }
-    } else {
-      // Node.js environment (fallback for server-side)
-      try {
-        return Buffer.from(base64, 'base64').toString('utf8');
-      } catch (e) {
-        console.error('Buffer decode error:', e);
-        throw e;
+
+      // Prepare base64url string for decoding
+      let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+
+      // Add padding
+      const paddingNeeded = 4 - (base64.length % 4);
+      if (paddingNeeded && paddingNeeded !== 4) {
+        base64 += '='.repeat(paddingNeeded);
       }
+
+      // Handle both browser and Node.js environments
+      if (typeof window !== 'undefined' && window.atob) {
+        // Browser environment
+        try {
+          const decoded = atob(base64);
+          // Handle UTF-8 properly
+          return decodeURIComponent(
+            Array.from(decoded)
+              .map(char => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
+          );
+        } catch (e) {
+          console.error('❌ Browser Base64 decode error:', e);
+          throw new Error(`Failed to decode base64 in browser: ${(e as any).message}`);
+        }
+      } else {
+        // Node.js environment (fallback for server-side)
+        try {
+          return Buffer.from(base64, 'base64').toString('utf8');
+        } catch (e) {
+          console.error('❌ Node.js Buffer decode error:', e);
+          throw new Error(`Failed to decode base64 in Node.js: ${(e as any).message}`);
+        }
+      }
+    } catch (e) {
+      console.error('❌ Base64 decode failed for input:', str?.substring(0, 20) + '...');
+      throw e;
     }
   },
 
