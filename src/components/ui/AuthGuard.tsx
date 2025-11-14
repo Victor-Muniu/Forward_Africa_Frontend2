@@ -81,9 +81,9 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
       return userRole === 'super_admin';
     }
 
-    // Check for admin role (Admin and Super Admin only)
+    // Check for admin role (admin roles: super_admin and content_manager)
     if (requiredRole === 'admin') {
-      return userRole === 'Admin' || userRole === 'Super Admin';
+      return userRole === 'super_admin' || userRole === 'content_manager';
     }
 
     return true; // Default to allowing access
