@@ -107,17 +107,35 @@ const jwtUtils = {
 
   parseToken(token: string): any {
     try {
-      const parts = token.split('.');
-      if (parts.length !== 3) throw new Error('Invalid JWT format');
+      if (!token || typeof token !== 'string') {
+        throw new Error('Token is not a valid string');
+      }
 
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error(`Invalid JWT format: expected 3 parts, got ${parts.length}`);
+      }
+
+      const header = parts[0];
       const payload = parts[1];
-      if (!payload) throw new Error('Missing payload');
+      const signature = parts[2];
+
+      if (!header || !payload || !signature) {
+        throw new Error('JWT parts are empty or missing');
+      }
 
       const decoded = jwtUtils.base64UrlDecode(payload);
-      return JSON.parse(decoded);
+      const parsed = JSON.parse(decoded);
+
+      if (!parsed.exp) {
+        console.warn('⚠️ JWT missing exp claim');
+      }
+
+      return parsed;
     } catch (error) {
-      console.error('JWT Parse Error:', error);
-      throw new AuthError('INVALID_TOKEN', `Invalid token format: ${(error as any).message}`);
+      console.error('❌ JWT Parse Error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new AuthError('INVALID_TOKEN', `Invalid token format: ${errorMessage}`);
     }
   },
 
