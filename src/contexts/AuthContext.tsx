@@ -146,36 +146,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let lastRefreshAttempt = 0;
 
     const performTokenCheck = () => {
-      const status = authService.getTokenStatus();
+      try {
+        const status = authService.getTokenStatus();
 
-      if (status.isExpired) {
-        console.log('⏳ Token expired, logging out');
-        setUser(null);
+        if (status.isExpired) {
+          console.log('⏳ Token expired, logging out');
+          setUser(null);
 
-        // Clear any pending redirects
-        if (redirectTimeoutRef.current) {
-          clearTimeout(redirectTimeoutRef.current);
-        }
+          // Clear any pending redirects
+          if (redirectTimeoutRef.current) {
+            clearTimeout(redirectTimeoutRef.current);
+          }
 
-        // Redirect to login with a small delay to ensure state is updated
-        if (!isRedirectingRef.current) {
-          isRedirectingRef.current = true;
-          redirectTimeoutRef.current = setTimeout(() => {
-            // Redirect directly to login without query params to prevent loops
-            router.replace('/login');
-            isRedirectingRef.current = false;
-          }, 100);
+          // Redirect to login with a small delay to ensure state is updated
+          if (!isRedirectingRef.current) {
+            isRedirectingRef.current = true;
+            redirectTimeoutRef.current = setTimeout(() => {
+              // Redirect directly to login without query params to prevent loops
+              router.replace('/login');
+              isRedirectingRef.current = false;
+            }, 100);
+          }
+        } else if (status.isValid && authService.shouldRefreshToken()) {
+          // Prevent rapid refresh attempts (debounce refresh to every 30 seconds minimum)
+          const now = Date.now();
+          if (now - lastRefreshAttempt >= 30 * 1000) {
+            console.log('🔄 Token expiring soon (within 5min), refreshing...');
+            lastRefreshAttempt = now;
+            refreshToken().catch((error) => {
+              console.error('❌ Failed to refresh token:', error);
+            });
+          }
         }
-      } else if (status.isValid && authService.shouldRefreshToken()) {
-        // Prevent rapid refresh attempts (debounce refresh to every 30 seconds minimum)
-        const now = Date.now();
-        if (now - lastRefreshAttempt >= 30 * 1000) {
-          console.log('🔄 Token expiring soon, refreshing...');
-          lastRefreshAttempt = now;
-          refreshToken().catch((error) => {
-            console.error('❌ Failed to refresh token:', error);
-          });
-        }
+      } catch (error) {
+        console.error('❌ Error during token check:', error);
+        // Don't log out on error - let the next check handle it
       }
     };
 
