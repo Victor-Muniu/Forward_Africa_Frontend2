@@ -6,11 +6,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // Clear auth_token cookie by setting it to an empty value with past expiration
-  // Match the cookie format used in login (without HttpOnly to keep it accessible to JavaScript)
+  // Match the cookie format used in login (SameSite=Lax, no HttpOnly flag for JavaScript accessibility)
   const cookieOptions = [
     'Path=/',
-    'SameSite=Strict',
-    'Max-Age=0',
+    'SameSite=Lax',
+    'Max-Age=0', // Immediately expires the cookie
     process.env.NODE_ENV === 'production' ? 'Secure' : ''
   ].filter(Boolean).join('; ');
 
