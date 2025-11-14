@@ -248,14 +248,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Set JWT token in cookie (accessible to JavaScript)
+    const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
     const cookieOptions = [
       'Path=/',
       'SameSite=Strict',
-      `Max-Age=${tokenExpiryMs / 1000}`, // Convert ms to seconds
+      `Max-Age=${maxAge}`,
       process.env.NODE_ENV === 'production' ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
+    // JWT tokens contain base64url encoded data, no URL encoding needed
     res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
+
+    console.log(`✅ Setting cookie: auth_token with Max-Age=${maxAge}s (expires in ${Math.floor(maxAge / 60)}m)`);
+    console.log(`🔐 JWT exp: ${new Date((tokenPayload.iat + this.JWT_EXPIRES_IN) * 1000).toISOString()}`);
 
     rateLimit.recordAttempt(email, true);
 
