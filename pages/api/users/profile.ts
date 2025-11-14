@@ -22,7 +22,9 @@ const initFirebaseAdmin = () => {
 };
 
 class JWTManager {
-  private static JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+  private static getJWTSecret(): string {
+    return process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+  }
 
   static base64UrlDecode(str: string): string {
     str += new Array(5 - str.length % 4).join('=');
@@ -35,7 +37,7 @@ class JWTManager {
   static generateSignature(message: string): string {
     const crypto = require('crypto');
     return crypto
-      .createHmac('sha256', this.JWT_SECRET)
+      .createHmac('sha256', this.getJWTSecret())
       .update(message)
       .digest('base64')
       .replace(/\+/g, '-')
