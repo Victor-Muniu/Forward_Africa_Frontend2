@@ -22,8 +22,23 @@ const initFirebaseAdmin = () => {
 };
 
 class JWTManager {
-  private static JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
-  private static JWT_EXPIRES_IN = Number(process.env.JWT_EXPIRES_IN) || 3600;
+  private static getJWTSecret(): string {
+    return process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+  }
+
+  private static getJWTExpiresIn(): number {
+    const expiresIn = process.env.JWT_EXPIRES_IN;
+    if (!expiresIn) {
+      console.warn('⚠️ JWT_EXPIRES_IN not set, using default 3600s');
+      return 3600;
+    }
+    const parsed = Number(expiresIn);
+    if (isNaN(parsed)) {
+      console.error('❌ JWT_EXPIRES_IN is not a valid number:', expiresIn);
+      return 3600;
+    }
+    return parsed;
+  }
 
   static base64UrlEncode(str: string): string {
     return Buffer.from(str)
@@ -36,7 +51,7 @@ class JWTManager {
   static generateSignature(message: string): string {
     const crypto = require('crypto');
     return crypto
-      .createHmac('sha256', this.JWT_SECRET)
+      .createHmac('sha256', this.getJWTSecret())
       .update(message)
       .digest('base64')
       .replace(/\+/g, '-')
@@ -47,7 +62,8 @@ class JWTManager {
   static createToken(payload: any): string {
     const header = { alg: 'HS256', typ: 'JWT' };
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + this.JWT_EXPIRES_IN;
+    const expiresIn = this.getJWTExpiresIn();
+    const exp = iat + expiresIn;
 
     const tokenPayload = { ...payload, iat, exp };
 
@@ -60,7 +76,7 @@ class JWTManager {
   }
 
   static getTokenExpiry(): number {
-    return this.JWT_EXPIRES_IN * 1000;
+    return this.getJWTExpiresIn() * 1000;
   }
 }
 
