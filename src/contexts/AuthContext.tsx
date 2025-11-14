@@ -113,14 +113,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('🔄 Auto-refreshing token...');
           try {
             const response = await authService.refreshToken();
-            if (response.user) {
-              // Re-decode user from new token
-              const newUser = authService.getUserFromToken();
-              if (newUser) {
-                setUser(newUser);
-                console.log('✅ Token refreshed and user updated');
-                scheduleTokenRefresh();
-              }
+            if (response && response.user) {
+              setUser(response.user);
+              console.log('✅ Token refreshed and user updated');
+              scheduleTokenRefresh();
             }
           } catch (error) {
             console.error('❌ Token refresh failed:', error);
