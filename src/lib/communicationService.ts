@@ -23,7 +23,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('forward_africa_token');
         localStorage.removeItem('forward_africa_user');
-        window.location.href = '/login';
+        // Don't redirect here - let AuthContext handle it when it detects user is null
       }
       throw new Error('Authentication required');
     }

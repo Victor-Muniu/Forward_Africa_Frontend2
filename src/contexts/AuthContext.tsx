@@ -95,17 +95,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔄 AuthContext: Refreshing token...');
 
       const response = await authService.refreshToken();
-      
+
       if (response.user) {
         setUser(response.user);
         setError(null);
+        console.log('✅ AuthContext: Token refreshed successfully');
+        return;
       }
 
-      console.log('✅ AuthContext: Token refreshed successfully');
-    } catch (error) {
-      console.error('❌ AuthContext: Token refresh failed:', error);
+      console.error('❌ AuthContext: Token refresh returned no user data');
       setUser(null);
       setError('Session expired. Please log in again.');
+    } catch (error) {
+      console.error('❌ AuthContext: Token refresh failed:', error);
+      // Only log out if it's an auth error, not a network error
+      if (error instanceof Error && error.message.includes('Session expired')) {
+        setUser(null);
+        setError('Session expired. Please log in again.');
+      } else {
+        console.warn('⚠️ Token refresh failed but not logging out (might be network error):', error);
+        // Keep user logged in and retry next time
+      }
     }
   }, []);
 
@@ -133,19 +143,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!isClient || loading) return;
 
     let tokenCheckInterval: NodeJS.Timeout | null = null;
+    let lastRefreshAttempt = 0;
 
     const performTokenCheck = () => {
       const status = authService.getTokenStatus();
-      
+
       if (status.isExpired) {
         console.log('⏳ Token expired, logging out');
         setUser(null);
-        
+
         // Clear any pending redirects
         if (redirectTimeoutRef.current) {
           clearTimeout(redirectTimeoutRef.current);
         }
-        
+
         // Redirect to login with a small delay to ensure state is updated
         if (!isRedirectingRef.current) {
           isRedirectingRef.current = true;
@@ -155,11 +166,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isRedirectingRef.current = false;
           }, 100);
         }
-      } else if (authService.shouldRefreshToken()) {
-        console.log('🔄 Token expiring soon, refreshing...');
-        refreshToken().catch(() => {
-          console.error('Failed to refresh token');
-        });
+      } else if (status.isValid && authService.shouldRefreshToken()) {
+        // Prevent rapid refresh attempts (debounce refresh to every 30 seconds minimum)
+        const now = Date.now();
+        if (now - lastRefreshAttempt >= 30 * 1000) {
+          console.log('🔄 Token expiring soon, refreshing...');
+          lastRefreshAttempt = now;
+          refreshToken().catch((error) => {
+            console.error('❌ Failed to refresh token:', error);
+          });
+        }
       }
     };
 
@@ -169,6 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Also check on page visibility change
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        console.log('📱 Page became visible, checking token...');
         performTokenCheck();
       }
     };
@@ -234,15 +251,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       console.log('✅ AuthContext: Sign in successful, user:', response.user);
 
-      // Redirect to home or previous page - use replace to avoid history issues
-      const redirectPath = router.query.redirect as string;
-      if (redirectPath && !['/login', '/register'].includes(redirectPath)) {
-        console.log('📍 Redirecting to:', redirectPath);
-        router.replace(redirectPath);
-      } else {
-        console.log('📍 Redirecting to: /home');
-        router.replace('/home');
-      }
+      // Redirect to home after successful login
+      console.log('📍 Redirecting to: /home');
+      router.replace('/home');
     } catch (error) {
       console.error('❌ AuthContext: Sign in error:', error);
 

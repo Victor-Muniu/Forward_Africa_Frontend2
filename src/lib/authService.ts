@@ -411,13 +411,21 @@ export const authService = {
   // Check if token should be refreshed
   shouldRefreshToken(): boolean {
     const expiry = this.getTokenExpiryMs();
-    if (!expiry) return true;
+    if (!expiry) {
+      console.warn('⚠️ AuthService: Could not determine token expiry');
+      return false; // Don't auto-refresh if we can't determine expiry
+    }
 
     const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiry
     const currentTime = Date.now();
     const timeUntilExpiry = expiry - currentTime;
 
-    return timeUntilExpiry <= TOKEN_REFRESH_THRESHOLD;
+    const shouldRefresh = timeUntilExpiry <= TOKEN_REFRESH_THRESHOLD;
+    if (shouldRefresh) {
+      console.log(`🔄 Token should be refreshed. Time until expiry: ${Math.floor(timeUntilExpiry / 1000)}s`);
+    }
+
+    return shouldRefresh;
   },
 
   // Get token status
@@ -425,19 +433,25 @@ export const authService = {
     const token = this.getToken();
 
     if (!token) {
+      console.log('ℹ️ AuthService: No token found');
       return { isValid: false, isExpired: true, timeUntilExpiry: 0 };
     }
 
     if (jwtUtils.isTokenExpired(token)) {
+      console.log('⏳ AuthService: Token is expired');
       return { isValid: false, isExpired: true, timeUntilExpiry: 0 };
     }
 
     const expiry = jwtUtils.getTokenExpiry(token);
     if (!expiry) {
+      console.warn('⚠️ AuthService: Could not determine token expiry from token');
       return { isValid: true, isExpired: false, timeUntilExpiry: null };
     }
 
     const timeUntilExpiry = Math.max(0, expiry - Date.now());
+    const timeUntilExpirySeconds = Math.floor(timeUntilExpiry / 1000);
+    console.log(`✅ AuthService: Token is valid. Expires in ${timeUntilExpirySeconds}s (${Math.floor(timeUntilExpirySeconds / 60)}m ${timeUntilExpirySeconds % 60}s)`);
+
     return { isValid: true, isExpired: false, timeUntilExpiry };
   }
 };

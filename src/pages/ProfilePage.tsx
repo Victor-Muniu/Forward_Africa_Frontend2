@@ -289,12 +289,7 @@ const ProfilePage: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut();
-    // Force a complete page reload to clear all cached data and state
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    } else {
-    navigate('/');
-    }
+    // Redirect to home - AuthContext will handle this
   };
 
   const handleDeleteAccount = async () => {
@@ -320,12 +315,7 @@ const ProfilePage: React.FC = () => {
       }
 
       await signOut();
-      // Force a complete page reload to clear all cached data and state
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      } else {
-      navigate('/');
-      }
+      // Redirect to home - AuthContext will handle this
     } catch (error) {
       console.error('Failed to delete account:', error);
       alert('Failed to delete account. Please try again.');
