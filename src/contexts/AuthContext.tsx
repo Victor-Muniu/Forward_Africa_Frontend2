@@ -210,8 +210,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Check token every 60 seconds instead of 30 to reduce noise
-    tokenCheckInterval = setInterval(performTokenCheck, 60 * 1000);
+    // Run token check immediately to catch expiration on page load
+    console.log('🔍 AuthContext: Running immediate token check...');
+    performTokenCheck();
+
+    // Check token every 30 seconds (more frequently to catch expirations sooner)
+    tokenCheckInterval = setInterval(performTokenCheck, 30 * 1000);
 
     // Also check on page visibility change
     const handleVisibilityChange = () => {
@@ -286,7 +290,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('📍 Redirecting to: /home');
       router.replace('/home');
     } catch (error) {
-      console.error('❌ AuthContext: Sign in error:', error);
+      console.error('�� AuthContext: Sign in error:', error);
 
       let errorMessage = 'Sign in failed';
 
