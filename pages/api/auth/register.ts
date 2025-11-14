@@ -198,16 +198,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tokenExpiryMs = JWTManager.getTokenExpiry();
 
     // Set JWT token in cookie (accessible to JavaScript for security checks)
+    const maxAge = Math.floor(tokenExpiryMs / 1000); // Convert ms to seconds
     const cookieOptions = [
       'Path=/',
       'SameSite=Strict',
-      `Max-Age=${tokenExpiryMs / 1000}`,
+      `Max-Age=${maxAge}`,
       process.env.NODE_ENV === 'production' ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
     res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
 
     console.log('✅ Registration successful for:', email);
+    console.log(`✅ Setting cookie: auth_token with Max-Age=${maxAge}s (expires in ${Math.floor(maxAge / 60)}m)`);
 
     return res.status(201).json({
       message: 'Registration successful',
