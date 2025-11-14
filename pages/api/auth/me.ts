@@ -79,8 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    initFirebaseAdmin();
-
     // Get token from cookie or Authorization header
     let token = req.cookies.auth_token;
 
@@ -107,45 +105,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Invalid or expired token', details: error.message });
     }
 
-    // Get user data from Firebase
-    let userRecord;
-    try {
-      userRecord = await admin.auth().getUser(payload.userId);
-    } catch (error: any) {
-      console.error('❌ Failed to get user from Firebase:', error.message);
-      return res.status(401).json({ error: 'User not found' });
-    }
-
-    // Get user profile from Firestore
-    let userData: any = {};
-    let userRole = payload.role || 'user';
-    let userPermissions = payload.permissions || [];
-
-    try {
-      const db = admin.firestore();
-      const userDoc = await db.collection('users').doc(userRecord.uid).get();
-
-      if (userDoc.exists) {
-        userData = userDoc.data() || {};
-        userRole = userData.role || userRole;
-        userPermissions = userData.permissions || userPermissions;
-      }
-    } catch (error) {
-      console.warn('Could not fetch Firestore user data:', error);
-    }
-
+    // Token is valid - return user data from JWT payload
+    // We already have all necessary data in the verified token
     const responseUser = {
-      id: userRecord.uid,
-      email: userRecord.email,
-      full_name: userRecord.displayName || '',
-      displayName: userRecord.displayName || '',
-      photoURL: userRecord.photoURL || null,
-      role: userRole,
-      permissions: userPermissions,
-      onboarding_completed: userData.onboarding_completed || false,
-      ...userData
+      id: payload.userId,
+      email: payload.email,
+      full_name: payload.displayName || '',
+      displayName: payload.displayName || '',
+      photoURL: payload.photoURL || null,
+      role: payload.role || 'user',
+      permissions: payload.permissions || [],
+      onboarding_completed: payload.onboarding_completed || false
     };
 
+    console.log('✅ Returning user data from verified token:', responseUser.email);
     return res.status(200).json(responseUser);
 
   } catch (error: any) {
