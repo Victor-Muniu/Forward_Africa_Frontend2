@@ -46,13 +46,10 @@ class AuthInterceptor {
         try {
           token = await authService.getValidToken();
         } catch (error) {
-          // If token refresh fails, redirect to login
+          // If token refresh fails, let AuthContext handle the redirect
           if (retryCount === 0) {
             authService.clearAuthData();
-            // Use router for better navigation (if available)
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
+            // Don't redirect here - let AuthContext handle it when it detects user is null
             throw new Error('Session expired. Please login again.');
           }
           throw error;
@@ -99,12 +96,9 @@ class AuthInterceptor {
         } catch (refreshError) {
           this.processQueue(refreshError, null);
 
-          // Clear auth data and redirect to login
+          // Clear auth data and let AuthContext handle the redirect
           authService.clearAuthData();
-          // Use router for better navigation (if available)
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
+          // Don't redirect here - let AuthContext handle it when it detects user is null
           throw new Error('Session expired. Please login again.');
         } finally {
           this.isRefreshing = false;
