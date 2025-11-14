@@ -276,8 +276,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Set-Cookie', `auth_token=${jwtToken}; ${cookieOptions}`);
 
     console.log(`✅ Setting cookie: auth_token with Max-Age=${maxAge}s (expires in ${Math.floor(maxAge / 60)}m)`);
-    const expiryTime = Math.floor(Date.now() / 1000) + JWTManager.getJWTExpiresIn();
-    console.log(`🔐 JWT exp: ${new Date(expiryTime * 1000).toISOString()}`);
+    const expiryTime = Date.now() + tokenExpiryMs;
+    console.log(`🔐 JWT expires at: ${new Date(expiryTime).toISOString()}`);
 
     rateLimit.recordAttempt(email, true);
 
