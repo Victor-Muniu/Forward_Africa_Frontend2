@@ -293,15 +293,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔄 AuthContext: Refreshing token...');
       const response = await authService.refreshToken();
 
-      if (response) {
-        // Decode new token
-        const newUser = authService.getUserFromToken();
-        if (newUser) {
-          setUser(newUser);
-          setError(null);
-          console.log('✅ Token refreshed');
-          return;
-        }
+      if (response && response.user) {
+        setUser(response.user);
+        setError(null);
+        console.log('✅ Token refreshed');
+        return;
       }
 
       console.error('❌ Token refresh failed - no user data');
