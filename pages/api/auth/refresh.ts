@@ -138,8 +138,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (userDoc.exists) {
         const data = userDoc.data();
-        const rawRole = data?.role || 'user';
-        userRole = normalizeRole(rawRole);
+        userRole = data?.role || 'user';
         userPermissions = data?.permissions || [];
         userData = data || {};
       }
@@ -147,7 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.warn('Could not fetch user data:', error);
     }
 
-    // Create new JWT token with normalized role
+    // Create new JWT token
     const tokenPayload = {
       userId: userRecord.uid,
       email: userRecord.email,
