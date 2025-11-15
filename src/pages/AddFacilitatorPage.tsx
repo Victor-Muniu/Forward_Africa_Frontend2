@@ -3,7 +3,7 @@ import { ArrowLeft, Save, User, Mail, Phone, Globe, Plus, X, Loader2, AlertTrian
 import Button from '../components/ui/Button';
 import { useNavigate, useSearchParams } from '../lib/router';
 import { Instructor } from '../types';
-import ImageUpload from '../components/ui/ImageUpload';
+import InstructorImageUpload from '../components/ui/InstructorImageUpload';
 import { useInstructorForm } from '../hooks/useInstructorForm';
 import { ValidationError, ValidationErrorsList } from '../components/ui/ValidationError';
 import { SuccessMessage } from '../components/ui/SuccessMessage';
@@ -325,15 +325,11 @@ const AddInstructorPage: React.FC = () => {
               {/* Profile Image and Experience */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Profile Image <span className="text-red-400">*</span>
-                  </label>
-                  <ImageUpload
+                  <InstructorImageUpload
                     onImageUpload={(url) => updateField('image', url)}
                     currentImage={formData.image}
-                    uploadType="avatar"
+                    instructorId={editInstructorId || undefined}
                     label="Profile Image"
-                    previewSize="sm"
                     required
                   />
                 </div>
