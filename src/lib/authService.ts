@@ -186,7 +186,7 @@ export const authService = {
         }
       }
 
-      console.log('🔍 AuthService: auth_token cookie not found');
+      console.log('🔍 AuthService: app_user cookie not found');
       return null;
     } catch (error) {
       console.error('❌ AuthService: Error reading cookies:', error);
