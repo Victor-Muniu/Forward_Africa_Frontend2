@@ -11,8 +11,8 @@ const getTokenFromCookie = (): string | null => {
 
     for (const cookie of cookieArray) {
       const trimmed = cookie.trim();
-      if (trimmed.startsWith('auth_token=')) {
-        const value = trimmed.substring('auth_token='.length);
+      if (trimmed.startsWith('app_user=')) {
+        const value = trimmed.substring('app_user='.length);
         if (value) {
           try {
             return decodeURIComponent(value);
@@ -37,11 +37,11 @@ export const hasValidToken = (): boolean => {
     const token = getTokenFromCookie();
 
     if (!token) {
-      console.log('❌ No auth_token cookie found');
+      console.log('❌ No app_user cookie found');
       return false;
     }
 
-    console.log('✅ auth_token cookie found, token is present');
+    console.log('✅ app_user cookie found, token is present');
     return true;
   } catch (error) {
     console.error('Error checking token:', error);
