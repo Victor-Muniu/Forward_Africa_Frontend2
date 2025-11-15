@@ -247,21 +247,11 @@ const AdminPage: React.FC = () => {
 
     if (confirm('Are you sure you want to delete this instructor? This will affect all courses they are assigned to.')) {
       try {
-        // Call the API to delete the instructor
-        const response = await fetch(`http://localhost:3002/api/instructors/${instructorId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('forward_africa_token')}`
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to delete instructor');
-        }
-
         const instructor = instructors.find(i => i.id === instructorId);
+
+        // Use instructorAPI to delete from Firestore
+        await import('../lib/api').then(module => module.instructorAPI.deleteInstructor(instructorId));
+
         logAuditEvent('instructor_deleted', `Deleted instructor: ${instructor?.name}`);
 
         // Refresh the instructors list from the database
