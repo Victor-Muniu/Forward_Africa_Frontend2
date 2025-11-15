@@ -16,6 +16,7 @@ interface SearchSuggestion {
 }
 
 const EnhancedSearchPage: React.FC = () => {
+  const router = useRouter();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
