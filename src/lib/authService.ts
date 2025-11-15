@@ -272,6 +272,9 @@ export const authService = {
         throw new AuthError('INVALID_TOKEN', 'Token missing required fields (userId or email)');
       }
 
+      // Normalize role to handle various formats (Super Admin -> super_admin, etc.)
+      const normalizedRole = normalizeRole(payload.role);
+
       // Convert token payload to AuthUser format
       const user: AuthUser = {
         id: payload.userId,
@@ -279,13 +282,13 @@ export const authService = {
         full_name: payload.displayName || '',
         displayName: payload.displayName || '',
         photoURL: payload.photoURL || null,
-        role: payload.role || 'user',
+        role: normalizedRole,
         permissions: payload.permissions || [],
         avatar_url: payload.photoURL || undefined,
         onboarding_completed: payload.onboarding_completed || false
       };
 
-      console.log('✅ AuthService: User extracted from token:', user);
+      console.log('✅ AuthService: User extracted from token (normalized role: ' + normalizedRole + '):', user);
       return user;
     } catch (error) {
       console.error('❌ AuthService: Error decoding user from token:', error);
@@ -357,7 +360,7 @@ export const authService = {
         throw new AuthError('WEAK_PASSWORD', 'Password must be at least 6 characters');
       }
 
-      console.log('📝 AuthService: Registering user...');
+      console.log('�� AuthService: Registering user...');
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
