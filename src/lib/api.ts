@@ -3,6 +3,13 @@
 
 import { API_BASE_URL } from './mysql';
 import { Course, Category, Instructor, User, UserProgress, Certificate, Achievement } from '../types';
+import {
+  getAllInstructorsFromFirestore,
+  getInstructorFromFirestore,
+  createInstructorInFirestore,
+  updateInstructorInFirestore,
+  deleteInstructorFromFirestore
+} from './firestoreInstructors';
 
 // Generic API request function with authentication
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
