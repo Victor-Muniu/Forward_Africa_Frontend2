@@ -95,9 +95,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check authentication on mount (synchronous, just decode token)
   useEffect(() => {
     if (!isClient) return;
-    
+
     initializeUserFromToken();
     setLoading(false);
+  }, [isClient, initializeUserFromToken]);
+
+  // Re-initialize user when page becomes visible (handles tab switching)
+  useEffect(() => {
+    if (!isClient) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden === false) {
+        console.log('📱 AuthContext: Page became visible, checking auth status...');
+        initializeUserFromToken();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [isClient, initializeUserFromToken]);
 
   // Auto-refresh token before expiry
