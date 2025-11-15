@@ -244,9 +244,6 @@ export const authService = {
         throw new AuthError('INVALID_TOKEN', 'Token missing required fields (userId or email)');
       }
 
-      // Normalize role to handle various formats (Super Admin -> super_admin, etc.)
-      const normalizedRole = normalizeRole(payload.role);
-
       // Convert token payload to AuthUser format
       const user: AuthUser = {
         id: payload.userId,
@@ -254,13 +251,13 @@ export const authService = {
         full_name: payload.displayName || '',
         displayName: payload.displayName || '',
         photoURL: payload.photoURL || null,
-        role: normalizedRole,
+        role: payload.role || 'user',
         permissions: payload.permissions || [],
         avatar_url: payload.photoURL || undefined,
         onboarding_completed: payload.onboarding_completed || false
       };
 
-      console.log('✅ AuthService: User extracted from token (normalized role: ' + normalizedRole + '):', user);
+      console.log('✅ AuthService: User extracted from token:', user);
       return user;
     } catch (error) {
       console.error('❌ AuthService: Error decoding user from token:', error);
