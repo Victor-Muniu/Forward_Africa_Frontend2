@@ -77,13 +77,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
 
     // Check for super_admin role
     if (requiredRole === 'super_admin') {
-      // Accept 'super_admin' or 'Super Admin' role for super_admin access
-      return userRole === 'super_admin' || userRole === 'Super Admin';
+      return userRole === 'super_admin';
     }
 
-    // Check for admin role (admin roles: super_admin, Super Admin, Admin, admin, and content_manager)
+    // Check for admin role (admin roles: super_admin and content_manager)
     if (requiredRole === 'admin') {
-      return userRole === 'super_admin' || userRole === 'Super Admin' || userRole === 'Admin' || userRole === 'admin' || userRole === 'content_manager' || userRole === 'Content Manager';
+      return userRole === 'super_admin' || userRole === 'content_manager';
     }
 
     return true; // Default to allowing access
