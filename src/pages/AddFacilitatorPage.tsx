@@ -3,7 +3,7 @@ import { ArrowLeft, Save, User, Mail, Phone, Globe, Plus, X, Loader2, AlertTrian
 import Button from '../components/ui/Button';
 import { useNavigate, useSearchParams } from '../lib/router';
 import { Instructor } from '../types';
-import ImageUpload from '../components/ui/ImageUpload';
+import InstructorImageUpload from '../components/ui/InstructorImageUpload';
 import { useInstructorForm } from '../hooks/useInstructorForm';
 import { ValidationError, ValidationErrorsList } from '../components/ui/ValidationError';
 import { SuccessMessage } from '../components/ui/SuccessMessage';
