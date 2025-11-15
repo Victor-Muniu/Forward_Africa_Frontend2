@@ -135,18 +135,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Token is valid - return user data from JWT payload
     // We already have all necessary data in the verified token
+    const normalizedRole = normalizeRole(payload.role);
     const responseUser = {
       id: payload.userId,
       email: payload.email,
       full_name: payload.displayName || '',
       displayName: payload.displayName || '',
       photoURL: payload.photoURL || null,
-      role: payload.role || 'user',
+      role: normalizedRole,
       permissions: payload.permissions || [],
       onboarding_completed: payload.onboarding_completed || false
     };
 
-    console.log('✅ Returning user data from verified token:', responseUser.email);
+    console.log('✅ Returning user data from verified token (normalized role: ' + normalizedRole + '):', responseUser.email);
     return res.status(200).json(responseUser);
 
   } catch (error: any) {
