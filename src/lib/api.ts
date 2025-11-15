@@ -135,36 +135,80 @@ export const categoryAPI = {
 };
 
 // Instructor API
+// Uses Firestore for persistence instead of HTTP backend
+import {
+  getAllInstructorsFromFirestore,
+  getInstructorFromFirestore,
+  createInstructorInFirestore,
+  updateInstructorInFirestore,
+  deleteInstructorFromFirestore
+} from './firestoreInstructors';
+
 export const instructorAPI = {
   // Get all instructors
-  getAllInstructors: () => apiRequest('/instructors'),
+  getAllInstructors: async () => {
+    try {
+      return await getAllInstructorsFromFirestore();
+    } catch (error) {
+      console.error('Failed to fetch instructors from Firestore:', error);
+      return [];
+    }
+  },
 
   // Get instructor by ID
-  getInstructor: (instructorId: string) => apiRequest(`/instructors/${instructorId}`),
+  getInstructor: async (instructorId: string) => {
+    try {
+      return await getInstructorFromFirestore(instructorId);
+    } catch (error) {
+      console.error('Failed to fetch instructor from Firestore:', error);
+      return null;
+    }
+  },
 
   // Get instructor courses
   getInstructorCourses: (instructorId: string, includeComingSoon = false) =>
     apiRequest(`/instructors/${instructorId}/courses${includeComingSoon ? '?include_coming_soon=true' : ''}`),
 
   // Create new instructor
-  createInstructor: (instructorData: Partial<Instructor>) =>
-    apiRequest('/instructors', {
-      method: 'POST',
-      body: JSON.stringify(instructorData),
-    }),
+  createInstructor: async (instructorData: Partial<Instructor>) => {
+    try {
+      return await createInstructorInFirestore({
+        name: instructorData.name || '',
+        title: instructorData.title || '',
+        email: instructorData.email || '',
+        phone: instructorData.phone,
+        bio: instructorData.bio || '',
+        image: instructorData.image || '',
+        experience: instructorData.experience || 0,
+        expertise: instructorData.expertise || [],
+        socialLinks: instructorData.socialLinks
+      });
+    } catch (error) {
+      console.error('Failed to create instructor in Firestore:', error);
+      throw error;
+    }
+  },
 
   // Update instructor
-  updateInstructor: (instructorId: string, instructorData: Partial<Instructor>) =>
-    apiRequest(`/instructors/${instructorId}`, {
-      method: 'PUT',
-      body: JSON.stringify(instructorData),
-    }),
+  updateInstructor: async (instructorId: string, instructorData: Partial<Instructor>) => {
+    try {
+      return await updateInstructorInFirestore(instructorId, instructorData);
+    } catch (error) {
+      console.error('Failed to update instructor in Firestore:', error);
+      throw error;
+    }
+  },
 
   // Delete instructor
-  deleteInstructor: (instructorId: string) =>
-    apiRequest(`/instructors/${instructorId}`, {
-      method: 'DELETE',
-    }),
+  deleteInstructor: async (instructorId: string) => {
+    try {
+      await deleteInstructorFromFirestore(instructorId);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete instructor from Firestore:', error);
+      throw error;
+    }
+  },
 };
 
 // User Progress API
