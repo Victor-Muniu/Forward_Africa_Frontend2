@@ -29,21 +29,24 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   useEffect(() => {
     // Get user role from AuthContext user and normalize it
-    let role = (user?.role as UserRole) || 'user';
+    let normalizedRole: UserRole = 'user';
+    const rawRole = (user?.role as string) || 'user';
 
     // Normalize role for ROLE_PERMISSIONS lookup
-    if (role === 'Super Admin' || role === 'Admin') {
-      role = 'super_admin' as UserRole;
-    } else if (role === 'Content Manager') {
-      role = 'content_manager' as UserRole;
-    } else if (role === 'Community Manager') {
-      role = 'community_manager' as UserRole;
-    } else if (role === 'User Support') {
-      role = 'user_support' as UserRole;
+    if (rawRole === 'Super Admin' || rawRole === 'Admin') {
+      normalizedRole = 'super_admin';
+    } else if (rawRole === 'Content Manager') {
+      normalizedRole = 'content_manager';
+    } else if (rawRole === 'Community Manager') {
+      normalizedRole = 'community_manager';
+    } else if (rawRole === 'User Support') {
+      normalizedRole = 'user_support';
+    } else if (rawRole === 'user') {
+      normalizedRole = 'user';
     }
 
-    setUserRole(role);
-    setPermissions(ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.user);
+    setUserRole(normalizedRole);
+    setPermissions(ROLE_PERMISSIONS[normalizedRole] || ROLE_PERMISSIONS.user);
   }, [user]);
 
   const hasPermission = (permission: Permission): boolean => {
